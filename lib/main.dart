@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sanskrit_racitatiion_project/home.dart';
+import 'package:sanskrit_racitatiion_project/splash.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Sanskrit Racitation',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
 
@@ -20,7 +20,8 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
 
       ),
-      home: HomePage(),
+      home: SplashPage(),
+
     );
   }
 }
