@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sanskrit_racitatiion_project/home.dart';
 import 'dart:async';
+import 'package:sanskrit_racitatiion_project/onBoarding/Onboarding_page1.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -16,7 +17,7 @@ class _SplashPageState extends State<SplashPage> {
     Timer(Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomePage()),
+        MaterialPageRoute(builder: (context) => OnboardingPage1()),
       );
     });
   }
