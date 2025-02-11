@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:sanskrit_racitatiion_project/home.dart';
 import 'dart:async';
 
@@ -24,10 +25,15 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Image.asset('assets/bhagavad_gita.png',
-          width: 300,
-          height: 210,
+      body: Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(
+         child: ClipOval(
+           child: Image.asset('assets/bhagavad_gita.png',
+           width: 300, height: 400,
+           fit: BoxFit.cover,
+          )
+          )
         ),
       ),
     );
