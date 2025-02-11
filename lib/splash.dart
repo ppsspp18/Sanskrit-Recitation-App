@@ -14,7 +14,7 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    Timer(Duration(seconds: 3), () {
+    Timer(Duration(seconds: 3000), () {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomePage()),
@@ -30,7 +30,7 @@ class _SplashPageState extends State<SplashPage> {
         child: Center(
          child: ClipOval(
            child: Image.asset('assets/bhagavad_gita.png',
-           width: 300, height: 400,
+           width: 225, height: 315,
            fit: BoxFit.cover,
           )
           )
