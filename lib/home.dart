@@ -15,6 +15,10 @@ class _HomePageState extends State<HomePage> {
         title: Text('BHAGAVAD GITA'),
         backgroundColor: Colors.deepPurpleAccent,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(onPressed: (){}, icon: Icon(Icons.settings))
+        ],
+        automaticallyImplyLeading: false,
       ),
     );
   }
