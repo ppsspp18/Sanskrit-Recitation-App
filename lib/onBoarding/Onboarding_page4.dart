@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sanskrit_racitatiion_project/home.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingPage4 extends StatefulWidget {
   const OnboardingPage4({super.key});
@@ -9,6 +10,16 @@ class OnboardingPage4 extends StatefulWidget {
 }
 
 class _OnboardingPage4State extends State<OnboardingPage4> {
+  Future<void> completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboardingCompleted', true);
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => HomePage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,13 +32,7 @@ class _OnboardingPage4State extends State<OnboardingPage4> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 TextButton(
-                    onPressed: (){
-                      Navigator.push(context,
-                        MaterialPageRoute(builder: (context)=>
-                            HomePage(),
-                        ),
-                      );
-                    },
+                    onPressed: completeOnboarding,
                     child: Text('Lets Start',
                       style: TextStyle(
                         color: Colors.deepPurpleAccent,

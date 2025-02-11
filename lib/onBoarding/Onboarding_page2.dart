@@ -24,7 +24,7 @@ class _OnboardingPage2State extends State<OnboardingPage2> {
               children: [
                 TextButton(
                     onPressed: (){
-                      Navigator.push(context,
+                      Navigator.pushReplacement(context,
                         MaterialPageRoute(builder: (context)=>
                             OnboardingPage4()
                         ),
@@ -43,7 +43,7 @@ class _OnboardingPage2State extends State<OnboardingPage2> {
                 ),
                 TextButton(
                     onPressed: (){
-                      Navigator.push(context,
+                      Navigator.pushReplacement(context,
                         MaterialPageRoute(builder: (context)=>
                             OnboardingPage3()
                         ),
