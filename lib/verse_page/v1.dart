@@ -14,7 +14,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     if (isPlaying) {
       await _audioPlayer.pause();
     } else {
-      await _audioPlayer.play(UrlSource('https://example.com/audio.mp3'));
+      await _audioPlayer.play(UrlSource('https://bhagavadgitaclass.com/wp-content/audio/01/01/BG_01_01-03_-_Bhakti_Vikas_Swami.mp3'));
     }
     setState(() {
       isPlaying = !isPlaying;
@@ -30,7 +30,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Bhagavad Gita - Verse 2.13')),
+      appBar: AppBar(title: Text('Verse 2.13', style: TextStyle(color: Colors.white),),
+      backgroundColor: Colors.deepPurpleAccent,
+      iconTheme: IconThemeData(color: Colors.white),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -50,9 +53,22 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 10),
-              ElevatedButton(
+              IconButton(
                 onPressed: _playAudio,
-                child: Text(isPlaying ? 'Pause Recitation' : 'Play Recitation'),
+                icon: Icon(
+                  isPlaying ? Icons.volume_up : Icons.volume_off,
+                  color: Colors.deepPurpleAccent,
+                  size: 30.0,
+                ),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Synonyms:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                'dehinaḥ — of the embodied; asmin — in this; yathā — as; dehe — in the body; kaumāram — boyhood; yauvanam — youth; jarā — old age; tathā — similarly; deha-antara — of transference of the body; prāptiḥ — achievement; dhīraḥ — the sober; tatra — thereupon; na — never; muhyati — is deluded.',
+                style: TextStyle(fontSize: 16),
               ),
               SizedBox(height: 20),
               Text(
@@ -61,15 +77,6 @@ class _GitaVersePageState extends State<GitaVersePage> {
               ),
               Text(
                 'As the embodied soul continuously passes, in this body, from boyhood to youth to old age, the soul similarly passes into another body at death. A sober person is not bewildered by such a change.',
-                style: TextStyle(fontSize: 16),
-              ),
-              SizedBox(height: 20),
-              Text(
-                'Synonyms:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                'dehinaḥ — of the embodied; asmin — in this; yathā — as; dehe — in the body; kaumāram — boyhood; ...',
                 style: TextStyle(fontSize: 16),
               ),
               SizedBox(height: 20),
