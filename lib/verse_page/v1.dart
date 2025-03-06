@@ -9,16 +9,37 @@ class GitaVersePage extends StatefulWidget {
 class _GitaVersePageState extends State<GitaVersePage> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool isPlaying = false;
+  Duration _duration = Duration.zero;
+  Duration _position = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayer.setSource(AssetSource('v1.mp3'));
+    _audioPlayer.onDurationChanged.listen((d) => setState(() => _duration = d));
+    _audioPlayer.onPositionChanged.listen((p) => setState(() => _position = p));
+    _audioPlayer.onPlayerComplete.listen((event) {
+      setState(() {
+        isPlaying = false;
+        _position = Duration.zero;
+      });
+    });
+  }
 
   void _playAudio() async {
     if (isPlaying) {
       await _audioPlayer.pause();
     } else {
-      await _audioPlayer.play(UrlSource('https://bhagavadgitaclass.com/wp-content/audio/01/01/BG_01_01-03_-_Bhakti_Vikas_Swami.mp3'));
+      await _audioPlayer.resume();
     }
     setState(() {
       isPlaying = !isPlaying;
     });
+  }
+
+  String _formatTime(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    return "${twoDigits(duration.inMinutes)}:${twoDigits(duration.inSeconds.remainder(60))}";
   }
 
   @override
@@ -26,13 +47,12 @@ class _GitaVersePageState extends State<GitaVersePage> {
     _audioPlayer.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Verse 2.13', style: TextStyle(color: Colors.white),),
-      backgroundColor: Colors.deepPurpleAccent,
-      iconTheme: IconThemeData(color: Colors.white),
+        backgroundColor: Colors.deepPurpleAccent,
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -70,13 +90,31 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 10),
+              SizedBox(height: 10),
               IconButton(
                 onPressed: _playAudio,
                 icon: Icon(
-                  isPlaying ? Icons.volume_up : Icons.volume_off,
+                  isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
                   color: Colors.deepPurpleAccent,
-                  size: 30.0,
+                  size: 40.0,
                 ),
+              ),
+              Slider(
+                min: 0,
+                max: _duration.inSeconds.toDouble(),
+                value: _position.inSeconds.toDouble(),
+                onChanged: (value) async {
+                  await _audioPlayer.seek(Duration(seconds: value.toInt()));
+                },
+                activeColor: Colors.deepPurpleAccent,
+                inactiveColor: Colors.grey,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(_formatTime(_position)),
+                  Text(_formatTime(_duration)),
+                ],
               ),
               SizedBox(height: 20),
               Text(
@@ -113,6 +151,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
   }
 }
 
+
 Widget _buildLine(List<Map<String, String>> phrases, {bool skipLine = true}) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.center,
@@ -120,7 +159,7 @@ Widget _buildLine(List<Map<String, String>> phrases, {bool skipLine = true}) {
       Wrap(
         alignment: WrapAlignment.center,
         spacing: 8.0,
-        runSpacing: 4.0, // Space between wrapped lines
+        runSpacing: 4.0,
         children: phrases.map((phrase) {
           return Column(
             children: [
@@ -138,7 +177,7 @@ Widget _buildLine(List<Map<String, String>> phrases, {bool skipLine = true}) {
           );
         }).toList(),
       ),
-      if (skipLine) SizedBox(height: 12.0), // Extra space when forced to break line
+      if (skipLine) SizedBox(height: 12.0),
     ],
   );
 }
