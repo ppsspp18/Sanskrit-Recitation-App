@@ -63,6 +63,7 @@ flutter:
   assets:
   - assets/bhagavad_gita.png
   - assets/v1.mp3
+  - assets/verses_template.json
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
