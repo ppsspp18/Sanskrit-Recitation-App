@@ -66,28 +66,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildLine([
-                {"sanskrit": "dehinaḥ", "translation": "of the embodied"},
-                {"sanskrit": "asmin", "translation": "in this"},
-                {"sanskrit": "yathā", "translation": "as"},
-                {"sanskrit": "dehe", "translation": "in the body"},
-              ]),
-              _buildLine([
-                {"sanskrit": "kaumāram", "translation": "boyhood"},
-                {"sanskrit": "yauvanam", "translation": "youth"},
-                {"sanskrit": "jarā", "translation": "old age"},
-              ]),
-              _buildLine([
-                {"sanskrit": "tathā", "translation": "similarly"},
-                {"sanskrit": "deha-antara", "translation": "of transference of the body"},
-                {"sanskrit": "prāptiḥ", "translation": "achievement"},
-              ]),
-              _buildLine([
-                {"sanskrit": "dhīraḥ", "translation": "the sober"},
-                {"sanskrit": "tatra", "translation": "thereupon"},
-                {"sanskrit": "na", "translation": "never"},
-                {"sanskrit": "muhyati", "translation": "is deluded"}
-              ]),
+              for (var line in widget.verse.lines) _buildLine(parseLine(line)),
 
               Text(
                 widget.verse.textSanskrit,
@@ -185,4 +164,17 @@ Widget _buildLine(List<Map<String, String>> phrases, {bool skipLine = true}) {
       if (skipLine) SizedBox(height: 12.0),
     ],
   );
+}
+
+List<Map<String, String>> parseLine(String line) {
+  List<Map<String, String>> result = [];
+  List<String> words = line.split(';');
+
+  for (String word in words) {
+    List<String> parts = word.split('—');
+    if (parts.length == 2) {
+      result.add({"sanskrit": parts[0].trim(), "translation": parts[1].trim()});
+    }
+  }
+  return result;
 }
