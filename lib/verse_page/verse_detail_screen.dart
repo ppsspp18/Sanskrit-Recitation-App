@@ -17,10 +17,21 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
 
+  String selectedLine = "Full Verse"; // Default selection
+  final List<String> lineOptions = [
+    "Full Verse",
+    "Line 1",
+    "Line 2",
+    "Line 3",
+    "Line 4",
+    "Line 5"
+  ];
+
   @override
   void initState() {
     super.initState();
-    _audioPlayer.setSource(AssetSource('v1.mp3'));
+    _setAudioSource("full_verse.mp3");
+
     _audioPlayer.onDurationChanged.listen((d) => setState(() => _duration = d));
     _audioPlayer.onPositionChanged.listen((p) => setState(() => _position = p));
     _audioPlayer.onPlayerComplete.listen((event) {
@@ -29,6 +40,11 @@ class _GitaVersePageState extends State<GitaVersePage> {
         _position = Duration.zero;
       });
     });
+  }
+
+  // Set the audio source dynamically based on selected line
+  void _setAudioSource(String fileName) async {
+    await _audioPlayer.setSource(AssetSource(fileName));
   }
 
   void _playAudio() async {
@@ -73,7 +89,6 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 10),
               SizedBox(height: 10),
               IconButton(
                 onPressed: _playAudio,
