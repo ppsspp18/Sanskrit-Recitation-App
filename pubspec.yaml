@@ -63,6 +63,9 @@ flutter:
   assets:
   - assets/bhagavad_gita.png
   - assets/v1.mp3
+  - assets/v2.mp3
+  - assets/v3.mp3
+  - assets/v4.mp3
   - assets/verses_template.json
   #   - images/a_dot_ham.jpeg
 

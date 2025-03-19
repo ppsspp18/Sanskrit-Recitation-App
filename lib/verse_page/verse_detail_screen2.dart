@@ -17,6 +17,14 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
 
+  String _selectedAudio = 'Audio 1';
+  final Map<String, String> _audioFiles = {
+    'Audio 1': 'v1.mp3',
+    'Audio 2': 'v2.mp3',
+    'Audio 3': 'v3.mp3',
+    'Audio 4': 'v4.mp3',
+  };
+
   @override
   void initState() {
     super.initState();
@@ -29,6 +37,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
         _position = Duration.zero;
       });
     });
+  }
+
+  void _setAudioSource() {
+    _audioPlayer.setSource(AssetSource(_audioFiles[_selectedAudio]!));
   }
 
   void _playAudio() async {
@@ -74,6 +86,21 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 10),
+              DropdownButton<String>(
+                value: _selectedAudio,
+                onChanged: (newValue) {
+                  setState(() {
+                    _selectedAudio = newValue!;
+                    _setAudioSource();
+                  });
+                },
+                items: _audioFiles.keys.map((audio) {
+                  return DropdownMenuItem(
+                    value: audio,
+                    child: Text(audio),
+                  );
+                }).toList(),
+              ),
               SizedBox(height: 10),
               IconButton(
                 onPressed: _playAudio,

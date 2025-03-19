@@ -17,21 +17,18 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
 
-  String selectedLine = "Full Verse"; // Default selection
-  final List<String> lineOptions = [
-    "Full Verse",
-    "Line 1",
-    "Line 2",
-    "Line 3",
-    "Line 4",
-    "Line 5"
-  ];
+  String _selectedAudio = 'Audio 1';
+  final Map<String, String> _audioFiles = {
+    'Audio 1': 'v1.mp3',
+    'Audio 2': 'v2.mp3',
+    'Audio 3': 'v3.mp3',
+    'Audio 4': 'v4.mp3',
+  };
 
   @override
   void initState() {
     super.initState();
-    _setAudioSource("full_verse.mp3");
-
+    _audioPlayer.setSource(AssetSource('v1.mp3'));
     _audioPlayer.onDurationChanged.listen((d) => setState(() => _duration = d));
     _audioPlayer.onPositionChanged.listen((p) => setState(() => _position = p));
     _audioPlayer.onPlayerComplete.listen((event) {
@@ -42,9 +39,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
     });
   }
 
-  // Set the audio source dynamically based on selected line
-  void _setAudioSource(String fileName) async {
-    await _audioPlayer.setSource(AssetSource(fileName));
+  void _setAudioSource() {
+    _audioPlayer.setSource(AssetSource(_audioFiles[_selectedAudio]!));
   }
 
   void _playAudio() async {
@@ -88,6 +84,22 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 widget.verse.textSanskrit,
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 10),
+              DropdownButton<String>(
+                value: _selectedAudio,
+                onChanged: (newValue) {
+                  setState(() {
+                    _selectedAudio = newValue!;
+                    _setAudioSource();
+                  });
+                },
+                items: _audioFiles.keys.map((audio) {
+                  return DropdownMenuItem(
+                    value: audio,
+                    child: Text(audio),
+                  );
+                }).toList(),
               ),
               SizedBox(height: 10),
               IconButton(
@@ -193,3 +205,4 @@ List<Map<String, String>> parseLine(String line) {
   }
   return result;
 }
+
