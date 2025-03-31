@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
+import 'package:sanskrit_racitatiion_project/verse_page/hamburger_button.dart';
 
 class GitaVersePage extends StatefulWidget {
   final Verse verse;
@@ -11,11 +12,13 @@ class GitaVersePage extends StatefulWidget {
 }
 
 class _GitaVersePageState extends State<GitaVersePage> {
-
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool isPlaying = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
+
+  String _selectedView = 'All';
+  final List<String> _viewOptions = ['All', 'Verse', 'Synonyms', 'Translation', 'Purport', 'sanskrit_text'];
 
   String _selectedAudio = 'Audio 1';
   final Map<String, String> _audioFiles = {
@@ -28,15 +31,13 @@ class _GitaVersePageState extends State<GitaVersePage> {
   @override
   void initState() {
     super.initState();
-    _audioPlayer.setSource(AssetSource('v1.mp3'));
+    _audioPlayer.setSource(AssetSource(_audioFiles[_selectedAudio]!));
     _audioPlayer.onDurationChanged.listen((d) => setState(() => _duration = d));
     _audioPlayer.onPositionChanged.listen((p) => setState(() => _position = p));
-    _audioPlayer.onPlayerComplete.listen((event) {
-      setState(() {
-        isPlaying = false;
-        _position = Duration.zero;
-      });
-    });
+    _audioPlayer.onPlayerComplete.listen((_) => setState(() {
+      isPlaying = false;
+      _position = Duration.zero;
+    }));
   }
 
   void _setAudioSource() {
@@ -49,9 +50,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     } else {
       await _audioPlayer.resume();
     }
-    setState(() {
-      isPlaying = !isPlaying;
-    });
+    setState(() => isPlaying = !isPlaying);
   }
 
   String _formatTime(Duration duration) {
@@ -64,106 +63,130 @@ class _GitaVersePageState extends State<GitaVersePage> {
     _audioPlayer.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Verse ${widget.verse.id}', style: TextStyle(color: Colors.white),),
+      appBar: AppBar(
+        title: Text('Verse ${widget.verse.id}', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.deepPurpleAccent,
         iconTheme: IconThemeData(color: Colors.white),
+        actions: [
+          HamburgerButton(
+            selectedView: _selectedView,
+            viewOptions: _viewOptions,
+            onViewSelected: (value) => setState(() => _selectedView = value),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              for (var line in widget.verse.lines) _buildLine(parseLine(line)),
+              if (_selectedView == 'All' || _selectedView == 'Verse')
+                ...widget.verse.lines.map((line) => _buildLine(parseLine(line))).toList(),
 
-              Text(
-                widget.verse.textSanskrit,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 10),
-              DropdownButton<String>(
-                value: _selectedAudio,
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedAudio = newValue!;
-                    _setAudioSource();
-                  });
-                },
-                items: _audioFiles.keys.map((audio) {
-                  return DropdownMenuItem(
-                    value: audio,
-                    child: Text(audio),
-                  );
-                }).toList(),
-              ),
-              SizedBox(height: 10),
-              IconButton(
-                onPressed: _playAudio,
-                icon: Icon(
-                  isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
-                  color: Colors.deepPurpleAccent,
-                  size: 40.0,
-                ),
-              ),
-              Slider(
-                min: 0,
-                max: _duration.inSeconds.toDouble(),
-                value: _position.inSeconds.toDouble(),
-                onChanged: (value) async {
-                  await _audioPlayer.seek(Duration(seconds: value.toInt()));
-                },
-                activeColor: Colors.deepPurpleAccent,
-                inactiveColor: Colors.grey,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(_formatTime(_position)),
-                  Text(_formatTime(_duration)),
-                ],
-              ),
-              SizedBox(height: 20),
-              Text(
-                'Synonyms:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                widget.verse.textSynonyms,
-                style: TextStyle(fontSize: 14),
-              ),
-              SizedBox(height: 20),
-              Text(
-                'Translation:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                widget.verse.textTranslation,
-                style: TextStyle(fontSize: 14),
-              ),
-              SizedBox(height: 20),
-              Text(
-                'Purport:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              Text(
-                widget.verse.textPurport,
-                style: TextStyle(fontSize: 14),
-              ),
+              if (_selectedView == 'All' || _selectedView == 'sanskrit_text')
+                _buildSection2('sanskrit text', widget.verse.textSanskrit),
+
+              _buildAudioControls(),
+
+              if (_selectedView == 'All' || _selectedView == 'Synonyms')
+                _buildSection('Synonyms', widget.verse.textSynonyms),
+
+              if (_selectedView == 'All' || _selectedView == 'Translation')
+                _buildSection('Translation', widget.verse.textTranslation),
+
+              if (_selectedView == 'All' || _selectedView == 'Purport')
+                _buildSection('Purport', widget.verse.textPurport),
+
             ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildSection(String title, String content) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(content, style: TextStyle(fontSize: 14)),
+        ],
+      ),
+    );
+  }
+  Widget _buildSection2(String title, String content) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          Text(content, style: TextStyle(fontSize: 11)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAudioControls() {
+    return Column(
+      children: [
+        DropdownButton<String>(
+          value: _selectedAudio,
+          onChanged: (newValue) => setState(() {
+            _selectedAudio = newValue!;
+            _setAudioSource();
+          }),
+          items: _audioFiles.keys.map((audio) => DropdownMenuItem(value: audio, child: Text(audio))).toList(),
+        ),
+        IconButton(
+          onPressed: _playAudio,
+          icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill, color: Colors.deepPurpleAccent, size: 40.0),
+        ),
+        Slider(
+          min: 0,
+          max: _duration.inSeconds.toDouble(),
+          value: _position.inSeconds.toDouble(),
+          onChanged: (value) async => await _audioPlayer.seek(Duration(seconds: value.toInt())),
+          activeColor: Colors.deepPurpleAccent,
+          inactiveColor: Colors.grey,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(_formatTime(_position)),
+            Text(_formatTime(_duration)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+List<Map<String, String>> parseLine(String line) {
+  List<Map<String, String>> result = []; // Explicitly define the list type
+  List<String> words = line.split(';');
+
+  for (String word in words) {
+    List<String> parts = word.split('—'); // Split Sanskrit and translation
+    if (parts.length == 2) {
+      result.add({
+        "sanskrit": parts[0].trim(),
+        "translation": parts[1].trim()
+      });
+    }
+  }
+  return result;
 }
 
 
-Widget _buildLine(List<Map<String, String>> phrases, {bool skipLine = true}) {
+Widget _buildLine(List<Map<String, String>> phrases) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
@@ -171,37 +194,14 @@ Widget _buildLine(List<Map<String, String>> phrases, {bool skipLine = true}) {
         alignment: WrapAlignment.center,
         spacing: 8.0,
         runSpacing: 4.0,
-        children: phrases.map((phrase) {
-          return Column(
-            children: [
-              Text(
-                phrase['sanskrit']!,
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              Text(
-                phrase['translation']!,
-                style: TextStyle(fontSize: 8, fontStyle: FontStyle.italic, color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          );
-        }).toList(),
+        children: phrases.map((phrase) => Column(
+          children: [
+            Text(phrase['sanskrit'] ?? '', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            Text(phrase['translation'] ?? '', style: TextStyle(fontSize: 8, fontStyle: FontStyle.italic, color: Colors.grey), textAlign: TextAlign.center),
+          ],
+        )).toList(),
       ),
-      if (skipLine) SizedBox(height: 12.0),
+      SizedBox(height: 12.0),
     ],
   );
-}
-
-List<Map<String, String>> parseLine(String line) {
-  List<Map<String, String>> result = [];
-  List<String> words = line.split(';');
-
-  for (String word in words) {
-    List<String> parts = word.split('—');
-    if (parts.length == 2) {
-      result.add({"sanskrit": parts[0].trim(), "translation": parts[1].trim()});
-    }
-  }
-  return result;
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart';
-import 'package:sanskrit_racitatiion_project/verse_page/verse_detail_screen2.dart';
+import 'package:sanskrit_racitatiion_project/verse_page/verse_detail_screen.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
 
 class HomePage extends StatefulWidget {
