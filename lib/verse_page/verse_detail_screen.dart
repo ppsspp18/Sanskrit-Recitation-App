@@ -17,7 +17,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
 
-  String _selectedView = 'All';
+  List<String> _selectedViews = ['All'];
   final List<String> _viewOptions = ['All', 'Verse', 'Synonyms', 'Translation', 'Purport', 'sanskrit_text'];
 
   String _selectedAudio = 'Audio 1';
@@ -73,10 +73,25 @@ class _GitaVersePageState extends State<GitaVersePage> {
         iconTheme: IconThemeData(color: Colors.white),
         actions: [
           HamburgerButton(
-            selectedView: _selectedView,
+            selectedViews: _selectedViews,
             viewOptions: _viewOptions,
-            onViewSelected: (value) => setState(() => _selectedView = value),
+            onViewSelected: (value) {
+              setState(() {
+                if (value == 'All') {
+                  _selectedViews = ['All']; // Reset to only 'All'
+                } else {
+                  if (_selectedViews.contains('All')) _selectedViews.remove('All');
+                  if (_selectedViews.contains(value)) {
+                    _selectedViews.remove(value);
+                  } else {
+                    _selectedViews.add(value);
+                  }
+                }
+              });
+            },
           ),
+
+
         ],
       ),
       body: Padding(
@@ -85,22 +100,23 @@ class _GitaVersePageState extends State<GitaVersePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (_selectedView == 'All' || _selectedView == 'Verse')
+              if (_selectedViews.contains('All') || _selectedViews.contains('Verse'))
                 ...widget.verse.lines.map((line) => _buildLine(parseLine(line))).toList(),
 
-              if (_selectedView == 'All' || _selectedView == 'sanskrit_text')
+              if (_selectedViews.contains('All') || _selectedViews.contains('sanskrit_text'))
                 _buildSection2('sanskrit text', widget.verse.textSanskrit),
 
               _buildAudioControls(),
 
-              if (_selectedView == 'All' || _selectedView == 'Synonyms')
+              if (_selectedViews.contains('All') || _selectedViews.contains('Synonyms'))
                 _buildSection('Synonyms', widget.verse.textSynonyms),
 
-              if (_selectedView == 'All' || _selectedView == 'Translation')
+              if (_selectedViews.contains('All') || _selectedViews.contains('Translation'))
                 _buildSection('Translation', widget.verse.textTranslation),
 
-              if (_selectedView == 'All' || _selectedView == 'Purport')
+              if (_selectedViews.contains('All') || _selectedViews.contains('Purport'))
                 _buildSection('Purport', widget.verse.textPurport),
+
 
             ],
           ),
