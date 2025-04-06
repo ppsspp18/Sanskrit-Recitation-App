@@ -8,6 +8,7 @@ class Verse {
   final String textTranslation;
   final String textPurport;
   final List<String> lines;
+  final List<String> audioFiles;
 
   Verse({
     required this.id,
@@ -16,6 +17,7 @@ class Verse {
     required this.textTranslation,
     required this.textPurport,
     required this.lines,
+    required this.audioFiles,
   });
 
   factory Verse.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class Verse {
         json['line3'] ?? '',
         json['line4'] ?? '',
       ],
+      audioFiles: List<String>.from(json['audioFiles'] ?? []),
     );
   }
 

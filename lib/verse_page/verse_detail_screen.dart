@@ -20,18 +20,21 @@ class _GitaVersePageState extends State<GitaVersePage> {
   List<String> _selectedViews = ['All'];
   final List<String> _viewOptions = ['All', 'Verse', 'Synonyms', 'Translation', 'Purport', 'sanskrit_text'];
 
-  String _selectedAudio = 'Audio 1';
-  final Map<String, String> _audioFiles = {
-    'Audio 1': 'v1.mp3',
-    'Audio 2': 'v2.mp3',
-    'Audio 3': 'v3.mp3',
-    'Audio 4': 'v4.mp3',
-  };
+  late String _selectedAudio;
+  late Map<String, String> _audioFiles;
 
   @override
   void initState() {
     super.initState();
+
+    _audioFiles = {
+      for (int i = 0; i < widget.verse.audioFiles.length; i++)
+        'Audio ${i + 1}': widget.verse.audioFiles[i],
+    };
+
+    _selectedAudio = _audioFiles.keys.first;
     _audioPlayer.setSource(AssetSource(_audioFiles[_selectedAudio]!));
+
     _audioPlayer.onDurationChanged.listen((d) => setState(() => _duration = d));
     _audioPlayer.onPositionChanged.listen((p) => setState(() => _position = p));
     _audioPlayer.onPlayerComplete.listen((_) => setState(() {
