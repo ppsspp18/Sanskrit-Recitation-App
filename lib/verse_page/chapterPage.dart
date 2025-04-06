@@ -68,7 +68,7 @@ class _ChapterPageState extends State<ChapterPage> {
             child: ListTile(
               title: Text("Verse ${verses[index].id}"),
               subtitle: Text(
-                verses[index].textSanskrit,
+                verses[index].textSanskrit1,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

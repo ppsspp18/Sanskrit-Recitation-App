@@ -18,7 +18,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Duration _position = Duration.zero;
 
   List<String> _selectedViews = ['All'];
-  final List<String> _viewOptions = ['All', 'Verse', 'Synonyms', 'Translation', 'Purport', 'sanskrit_text'];
+  final List<String> _viewOptions = ['All', 'Verse in English', 'Verse in Sanskrit','Synonyms', 'Translation', 'Purport'];
 
   late String _selectedAudio;
   late Map<String, String> _audioFiles;
@@ -103,11 +103,14 @@ class _GitaVersePageState extends State<GitaVersePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (_selectedViews.contains('All') || _selectedViews.contains('Verse'))
-                ...widget.verse.lines.map((line) => _buildLine(parseLine(line))).toList(),
 
-              if (_selectedViews.contains('All') || _selectedViews.contains('sanskrit_text'))
-                _buildSection2('sanskrit text', widget.verse.textSanskrit),
+              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in Sanskrit'))
+                _buildSection2(widget.verse.textSanskrit1),
+              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in Sanskrit'))
+                _buildSection2(widget.verse.textSanskrit2),
+
+              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in English'))
+                ...widget.verse.lines.map((line) => _buildLine(parseLine(line))).toList(),
 
               _buildAudioControls(),
 
@@ -140,14 +143,13 @@ class _GitaVersePageState extends State<GitaVersePage> {
       ),
     );
   }
-  Widget _buildSection2(String title, String content) {
+  Widget _buildSection2(String content) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-          Text(content, style: TextStyle(fontSize: 11)),
+          Text(content, style: TextStyle(fontSize: 10)),
         ],
       ),
     );

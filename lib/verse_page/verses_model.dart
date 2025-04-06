@@ -3,7 +3,8 @@ import 'package:flutter/foundation.dart';
 
 class Verse {
   final int id;
-  final String textSanskrit;
+  final String textSanskrit1;
+  final String textSanskrit2;
   final String textSynonyms;
   final String textTranslation;
   final String textPurport;
@@ -12,7 +13,8 @@ class Verse {
 
   Verse({
     required this.id,
-    required this.textSanskrit,
+    required this.textSanskrit1,
+    required this.textSanskrit2,
     required this.textSynonyms,
     required this.textTranslation,
     required this.textPurport,
@@ -23,7 +25,8 @@ class Verse {
   factory Verse.fromJson(Map<String, dynamic> json) {
     return Verse(
       id: json['id'],
-      textSanskrit: json['textSanskrit'],
+      textSanskrit1: json['textSanskrit1'],
+      textSanskrit2: json['textSanskrit2'],
       textSynonyms: json['textSynonyms'],
       textTranslation: json['textTranslation'],
       textPurport: json['textPurport'],
