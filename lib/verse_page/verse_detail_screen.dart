@@ -149,7 +149,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(content, style: TextStyle(fontSize: 10)),
+          Text(content, style: TextStyle(fontSize: 9)),
         ],
       ),
     );
