@@ -18,7 +18,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Duration _position = Duration.zero;
 
   List<String> _selectedViews = ['All'];
-  final List<String> _viewOptions = ['All', 'Verse in English', 'Verse in Sanskrit','Synonyms', 'Translation', 'Purport'];
+  final List<String> _viewOptions = ['All', 'Verse in English', 'Verse in Sanskrit','Synonyms', 'Translation', 'Purport', 'verse with synonyms'];
 
   late String _selectedAudio;
   late Map<String, String> _audioFiles;
@@ -71,7 +71,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Verse ${widget.verse.id}', style: TextStyle(color: Colors.white)),
+        title: Text('Verse ${widget.verse.id2}', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.deepPurpleAccent,
         iconTheme: IconThemeData(color: Colors.white),
         actions: [
@@ -110,7 +110,16 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 _buildSection2(widget.verse.textSanskrit2),
 
               if (_selectedViews.contains('All') || _selectedViews.contains('Verse in English'))
-                ...widget.verse.lines.map((line) => _buildLine(parseLine(line))).toList(),
+                _buildSection2(widget.verse.line1),
+              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in English'))
+                _buildSection2(widget.verse.line2),
+              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in English'))
+                _buildSection2(widget.verse.line3),
+              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in English'))
+                _buildSection2(widget.verse.line4),
+
+              if (_selectedViews.contains('All') || _selectedViews.contains('Verse with synonyms'))
+                ...widget.verse.slines.map((sline) => _buildLine(parseLine(sline))).toList(),
 
               _buildAudioControls(),
 

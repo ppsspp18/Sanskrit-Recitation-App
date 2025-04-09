@@ -10,6 +10,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final List<String> chapterIds = List.generate(18, (index) => (index + 1).toString());
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,30 +30,27 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.settings),
           ),
         ],
-        automaticallyImplyLeading: false,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ElevatedButton(
+      body: ListView.builder(
+        itemCount: chapterIds.length,
+        itemBuilder: (context, index) {
+          final chapterId = chapterIds[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ChapterPage()),
+                  MaterialPageRoute(builder: (context) => ChapterPage(chapterId: chapterId)),
                 );
               },
-              child: const Text('CHAPTER 15'),
+              child: Text('Chapter $chapterId'),
             ),
-            // Add more buttons here for other pages if needed
-            // ElevatedButton(
-            //   onPressed: () {},
-            //   child: const Text('Another Page'),
-            // ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 }
+
+
