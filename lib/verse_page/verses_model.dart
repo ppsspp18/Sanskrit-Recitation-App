@@ -1,71 +1,75 @@
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
+class Synonym {
+  final String versetext;
+  final String meaning;
 
-class Verse {
-  final int id1;
-  final int id2;
-  final String textSanskrit1;
-  final String textSanskrit2;
-  final String line1;
-  final String line2;
-  final String line3;
-  final String line4;
-  final String textSynonyms;
-  final String textTranslation;
-  final String textPurport;
-  final List<String> slines;
-  final List<String> audioFiles;
+  Synonym({required this.versetext, required this.meaning});
 
-  Verse({
-    required this.id1,
-    required this.id2,
-    required this.textSanskrit1,
-    required this.textSanskrit2,
-    required this.textSynonyms,
-    required this.textTranslation,
-    required this.textPurport,
-    required this.line1,
-    required this.line2,
-    required this.line3,
-    required this.line4,
-    required this.slines,
-    required this.audioFiles,
-  });
-
-  factory Verse.fromJson(Map<String, dynamic> json) {
-    return Verse(
-      id1: json['id1'],
-      id2: json['id2'],
-      textSanskrit1: json['textSanskrit1'],
-      textSanskrit2: json['textSanskrit2'],
-      textSynonyms: json['textSynonyms'],
-      textTranslation: json['textTranslation'],
-      textPurport: json['textPurport'],
-      line1: json['line1'],
-      line2: json['line2'],
-      line3: json['line3'],
-      line4: json['line4'],
-      slines: [
-        json['sline1'] ?? '',
-        json['sline2'] ?? '',
-        json['sline3'] ?? '',
-        json['sline4'] ?? '',
-      ],
-      audioFiles: List<String>.from(json['audioFiles'] ?? []),
+  factory Synonym.fromJson(Map<String, dynamic> json) {
+    return Synonym(
+      versetext: json['versetext'] ?? '',
+      meaning: json['meaning'] ?? '',
     );
-  }
-
-  static List<Verse> fromJsonList(String jsonString) {
-    try {
-      final data = json.decode(jsonString);
-      if (data is! Map || data['verses'] is! List) {
-        throw FormatException("Invalid JSON format");
-      }
-      return (data['verses'] as List).map((e) => Verse.fromJson(e)).toList();
-    } catch (e) {
-      debugPrint("Error parsing JSON: $e");
-      return [];
-    }
   }
 }
 
+class Verse_1 {
+  final String chapter;
+  final String shloka;
+  final String sanskrit;
+  final String english;
+  final Map<String, Synonym> synonyms;
+  final String translation;
+  final String purport;
+  final List<String> audioPaths; // New field for audio paths
+  final String verseId; // Unique ID for the verse (chapter-shloka)
+
+  Verse_1({
+    required this.chapter,
+    required this.shloka,
+    required this.sanskrit,
+    required this.english,
+    required this.synonyms,
+    required this.translation,
+    required this.purport,
+    this.audioPaths = const [], // Default empty list for audio paths
+    String? verseId,
+  }) : verseId = verseId ?? "${chapter.padLeft(2, '0')}-${shloka.padLeft(2, '0')}";
+
+  factory Verse_1.fromJson(Map<String, dynamic> json) {
+    final syns = <String, Synonym>{};
+    if (json['synonyms'] != null) {
+      json['synonyms'].forEach((k, v) {
+        syns[k] = Synonym.fromJson(v);
+      });
+    }
+
+    return Verse_1(
+      chapter: json['chapter'] ?? '',
+      shloka: json['shloka'] ?? '',
+      sanskrit: json['sanskrit'] ?? '',
+      english: json['english'] ?? '',
+      synonyms: syns,
+      translation: json['translation'] ?? '',
+      purport: json['purport'] ?? '',
+      audioPaths: json['audioPaths']?.cast<String>() ?? [],
+      verseId: json['verseId'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'chapter': chapter,
+      'shloka': shloka,
+      'sanskrit': sanskrit,
+      'english': english,
+      'synonyms': synonyms.map((key, value) => MapEntry(key, {
+        'versetext': value.versetext,
+        'meaning': value.meaning,
+      })),
+      'translation': translation,
+      'purport': purport,
+      'audioPaths': audioPaths,
+      'verseId': verseId,
+    };
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "mappings": [
+    {
+      "verseId": "01-01",
+      "audioPaths": ["v1.mp3"]
+    },
+    {
+      "verseId": "01-02",
+      "audioPaths": ["v2.mp3"]
+    },
+    {
+      "verseId": "01-03",
+      "audioPaths": ["v3.mp3"]
+    },
+    {
+      "verseId": "01-04",
+      "audioPaths": ["v4.mp3"]
+    },
+    {
+      "verseId": "02-01",
+      "audioPaths": ["v1.mp3", "v2.mp3"]
+    },
+    {
+      "verseId": "02-02",
+      "audioPaths": ["v2.mp3", "v3.mp3"]
+    },
+    {
+      "verseId": "02-03",
+      "audioPaths": ["v3.mp3", "v4.mp3"]
+    },
+    {
+      "verseId": "02-04",
+      "audioPaths": ["v4.mp3", "v1.mp3"]
+    }
+  ]
+}

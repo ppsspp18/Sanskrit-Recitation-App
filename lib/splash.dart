@@ -24,9 +24,9 @@ class _SplashPageState extends State<SplashPage> {
     bool hasSeenOnboarding = prefs.getBool('onboardingCompleted') ?? false;
 
     // Delay for splash screen
-    await Future.delayed(Duration(seconds: 3));
+    await Future.delayed(Duration(seconds: 2));
 
-    // Navigate to Onboarding if first time, else go to Home
+    // Navigate to Onboarding or Home based on user status
     if (hasSeenOnboarding) {
       Navigator.pushReplacement(
         context,
@@ -43,17 +43,80 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
+    return bannerpage();
+  }
+
+  Scaffold bannerpage() {
     return Scaffold(
-      body: Padding(
-        padding: EdgeInsets.all(20),
-        child: Center(
-         child: ClipOval(
-           child: Image.asset('assets/bhagavad_gita.png',
-           width: 225, height: 315,
-           fit: BoxFit.cover,
-          )
-          )
+      body: Stack(
+      fit: StackFit.expand,
+      children: [
+        // Background Image (Bhagavad Gita)
+        Image.asset(
+        'Bg.png',
+        fit: BoxFit.cover,
         ),
+        // Overlay (dark or orange)
+        Container(
+        color: Colors.orange.withOpacity(0.4), // You can adjust opacity or use Colors.black.withOpacity(0.6)
+        ),
+        // Foreground content
+        Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+          // Large App Logo
+          ClipRRect(
+            borderRadius: BorderRadius.circular(100),
+            child: Image.asset(
+            'Logo_2.png',
+            width: 180,
+            height: 180,
+            fit: BoxFit.cover,
+            ),
+          ),
+          SizedBox(height: 40),
+          // App Name
+          Text(
+            "Sanskrit Recitation",
+            style: TextStyle(
+            fontSize: 38,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 2,
+            shadows: [
+              Shadow(
+              blurRadius: 8,
+              color: Colors.black45,
+              offset: Offset(2, 2),
+              ),
+            ],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 20),
+          // Tagline
+          Text(
+            "Learn. Chant. Connect.",
+            style: TextStyle(
+            fontSize: 22,
+            color: Colors.white70,
+            fontStyle: FontStyle.italic,
+            letterSpacing: 1,
+            shadows: [
+              Shadow(
+              blurRadius: 6,
+              color: Colors.black38,
+              offset: Offset(1, 1),
+              ),
+            ],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          ],
+        ),
+        ),
+      ],
       ),
     );
   }
