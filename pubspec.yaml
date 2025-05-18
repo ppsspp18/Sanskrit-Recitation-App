@@ -61,12 +61,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-  - assets/bhagavad_gita.png
-  - assets/v1.mp3
-  - assets/v2.mp3
-  - assets/v3.mp3
-  - assets/v4.mp3
-  - assets/verses_template.json
+  - assets/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
-import 'package:sanskrit_racitatiion_project/verse_page/hamburger_button.dart';
 
 class GitaVersePage extends StatefulWidget {
-  final Verse verse;
+  final Verse_1 verse;
   const GitaVersePage({super.key, required this.verse});
 
   @override
-  _GitaVersePageState createState() => _GitaVersePageState();
+  State<GitaVersePage> createState() => _GitaVersePageState();
 }
 
 class _GitaVersePageState extends State<GitaVersePage> {
@@ -16,38 +15,54 @@ class _GitaVersePageState extends State<GitaVersePage> {
   bool isPlaying = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
-
-  List<String> _selectedViews = ['All'];
-  final List<String> _viewOptions = ['All', 'Verse in English', 'Verse in Sanskrit','Synonyms', 'Translation', 'Purport', 'verse with synonyms'];
-
   late String _selectedAudio;
   late Map<String, String> _audioFiles;
+  
+  // For tooltip display
+  bool _tooltipVisible = false;
+  String _tooltipText = '';
+  Offset _tooltipPosition = Offset.zero;
+  bool _tooltipLocked = false;
+  
+  // For expandable sections
+  bool _showWordMeanings = false;
+  bool _showTranslation = false;
+  bool _showPurport = false;
 
   @override
   void initState() {
     super.initState();
+    
+    // Set up audio files
+    if (widget.verse.audioPaths.isNotEmpty) {
+      _audioFiles = {
+        for (int i = 0; i < widget.verse.audioPaths.length; i++)
+          'Audio ${i + 1}': widget.verse.audioPaths[i],
+      };
 
-    _audioFiles = {
-      for (int i = 0; i < widget.verse.audioFiles.length; i++)
-        'Audio ${i + 1}': widget.verse.audioFiles[i],
-    };
+      _selectedAudio = _audioFiles.keys.first;
+      _audioPlayer.setSource(AssetSource(_audioFiles[_selectedAudio]!));
 
-    _selectedAudio = _audioFiles.keys.first;
-    _audioPlayer.setSource(AssetSource(_audioFiles[_selectedAudio]!));
-
-    _audioPlayer.onDurationChanged.listen((d) => setState(() => _duration = d));
-    _audioPlayer.onPositionChanged.listen((p) => setState(() => _position = p));
-    _audioPlayer.onPlayerComplete.listen((_) => setState(() {
-      isPlaying = false;
-      _position = Duration.zero;
-    }));
+      _audioPlayer.onDurationChanged.listen((d) => setState(() => _duration = d));
+      _audioPlayer.onPositionChanged.listen((p) => setState(() => _position = p));
+      _audioPlayer.onPlayerComplete.listen((_) => setState(() {
+        isPlaying = false;
+        _position = Duration.zero;
+      }));
+    } else {
+      _audioFiles = {};
+    }
   }
 
   void _setAudioSource() {
-    _audioPlayer.setSource(AssetSource(_audioFiles[_selectedAudio]!));
+    if (_audioFiles.isNotEmpty && _audioFiles[_selectedAudio] != null) {
+      _audioPlayer.setSource(AssetSource(_audioFiles[_selectedAudio]!));
+    }
   }
 
   void _playAudio() async {
+    if (_audioFiles.isEmpty) return;
+    
     if (isPlaying) {
       await _audioPlayer.pause();
     } else {
@@ -67,173 +82,551 @@ class _GitaVersePageState extends State<GitaVersePage> {
     super.dispose();
   }
 
+  void _showTooltip(String text, Offset position) {
+    setState(() {
+      _tooltipText = text;
+      _tooltipPosition = position;
+      _tooltipVisible = true;
+    });
+  }
+
+  void _hideTooltip() {
+    if (!_tooltipLocked) {
+      setState(() {
+        _tooltipVisible = false;
+      });
+    }
+  }
+
+  void _toggleTooltipLock() {
+    setState(() {
+      _tooltipLocked = !_tooltipLocked;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Verse ${widget.verse.id2}', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.deepPurpleAccent,
-        iconTheme: IconThemeData(color: Colors.white),
-        actions: [
-          HamburgerButton(
-            selectedViews: _selectedViews,
-            viewOptions: _viewOptions,
-            onViewSelected: (value) {
-              setState(() {
-                if (value == 'All') {
-                  _selectedViews = ['All']; // Reset to only 'All'
-                } else {
-                  if (_selectedViews.contains('All')) _selectedViews.remove('All');
-                  if (_selectedViews.contains(value)) {
-                    _selectedViews.remove(value);
-                  } else {
-                    _selectedViews.add(value);
-                  }
-                }
-              });
-            },
+    return GestureDetector(
+      onTap: () {
+        if (_tooltipLocked) {
+          setState(() {
+            _tooltipLocked = false;
+            _tooltipVisible = false;
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
+            style: const TextStyle(color: Colors.white),
           ),
+          backgroundColor: Colors.deepPurpleAccent,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Breadcrumb navigation
+                  _buildBreadcrumb(),
+                  
+                  // Main verse card
+                  Card(
+                    elevation: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Column(
+                      children: [
+                        // Card header
+                        Container(
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF8F9FA),
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Color(0xFFE9ECEF),
+                                width: 1.0,
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.bookmark_add_outlined),
+                                color: Colors.deepPurpleAccent,
+                                onPressed: () {
+                                  // Add to playlist functionality would go here
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Bookmark feature coming soon'),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // Card body
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Sanskrit (Devanagari) section
+                              if (widget.verse.sanskrit.isNotEmpty) 
+                                _buildVerseSection(
+                                  'Sanskrit (Devanagari)', 
+                                  widget.verse.sanskrit,
+                                  false, // Not interactive
+                                ),
+                              
+                              const SizedBox(height: 24.0),
+                              
+                              // Transliteration section with interactive words
+                              if (widget.verse.english.isNotEmpty) 
+                                _buildVerseSection(
+                                  'Transliteration (IAST)', 
+                                  widget.verse.english,
+                                  true, // Interactive for hover tooltips
+                                ),
+                              
+                              const SizedBox(height: 16.0),
+                              
+                              // Collapsible sections
+                              _buildCollapsibleSection(
+                                'Word-by-Word Translation',
+                                _showWordMeanings,
+                                () => setState(() => _showWordMeanings = !_showWordMeanings),
+                                _buildWordMeanings(),
+                              ),
+                              
+                              _buildCollapsibleSection(
+                                'Translation',
+                                _showTranslation,
+                                () => setState(() => _showTranslation = !_showTranslation),
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Text(
+                                    widget.verse.translation,
+                                    style: const TextStyle(fontSize: 16, height: 1.6),
+                                  ),
+                                ),
+                              ),
+                              
+                              _buildCollapsibleSection(
+                                'Purport',
+                                _showPurport,
+                                () => setState(() => _showPurport = !_showPurport),
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Text(
+                                    widget.verse.purport,
+                                    style: const TextStyle(fontSize: 16, height: 1.6),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // Audio player section
+                        if (widget.verse.audioPaths.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(16.0),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFF8F9FA),
+                              border: Border(
+                                top: BorderSide(
+                                  color: Color(0xFFE9ECEF),
+                                  width: 1.0,
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Audio',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 16.0),
+                                
+                                // Audio player controls
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      onPressed: _playAudio,
+                                      icon: Icon(
+                                        isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
+                                        color: Colors.deepPurpleAccent,
+                                        size: 40.0,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8.0),
+                                    Expanded(
+                                      child: Column(
+                                        children: [
+                                          SliderTheme(
+                                            data: SliderTheme.of(context).copyWith(
+                                              activeTrackColor: Colors.deepPurpleAccent,
+                                              inactiveTrackColor: Colors.grey.shade300,
+                                              thumbColor: Colors.deepPurpleAccent,
+                                              overlayColor: Colors.deepPurple.withOpacity(0.2),
+                                              trackHeight: 4.0,
+                                            ),
+                                            child: Slider(
+                                              min: 0,
+                                              max: _duration.inSeconds.toDouble(),
+                                              value: _position.inSeconds.toDouble(),
+                                              onChanged: (value) async {
+                                                await _audioPlayer.seek(Duration(seconds: value.toInt()));
+                                              },
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Text(_formatTime(_position)),
+                                                Text(_formatTime(_duration)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                
+                                if (_audioFiles.length > 1) ...[
+                                  const SizedBox(height: 16.0),
+                                  DropdownButton<String>(
+                                    value: _selectedAudio,
+                                    isExpanded: true,
+                                    onChanged: (newValue) {
+                                      if (newValue != null) {
+                                        setState(() {
+                                          _selectedAudio = newValue;
+                                          _setAudioSource();
+                                        });
+                                      }
+                                    },
+                                    items: _audioFiles.keys.map((audio) {
+                                      return DropdownMenuItem<String>(
+                                        value: audio,
+                                        child: Text(audio),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Tooltip overlay
+            if (_tooltipVisible)
+              Positioned(
+                left: _tooltipPosition.dx,
+                top: _tooltipPosition.dy,
+                child: GestureDetector(
+                  onTap: _toggleTooltipLock,
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.7,
+                    ),
+                    padding: const EdgeInsets.all(12.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 6.0,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: _tooltipLocked ? Colors.deepPurpleAccent : Colors.grey.shade300,
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Text(
+                      _tooltipText,
+                      style: const TextStyle(fontSize: 14.0),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
-
+  Widget _buildBreadcrumb() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Wrap(
+        children: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Scriptures'),
+          ),
+          const Text(' / ', style: TextStyle(color: Colors.grey)),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Bhagavad Gita'),
+          ),
+          const Text(' / ', style: TextStyle(color: Colors.grey)),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text('Chapter ${widget.verse.chapter}'),
+          ),
+          const Text(' / ', style: TextStyle(color: Colors.grey)),
+          Text(
+            'Verse ${widget.verse.shloka}',
+            style: const TextStyle(color: Colors.grey),
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
+    );
+  }
+
+  Widget _buildVerseSection(String title, String content, bool interactive) {
+    final lines = content.split('\n');
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.deepPurpleAccent,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12.0),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFAFAFA),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-
-              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in Sanskrit'))
-                _buildSection2(widget.verse.textSanskrit1),
-              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in Sanskrit'))
-                _buildSection2(widget.verse.textSanskrit2),
-
-              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in English'))
-                _buildSection2(widget.verse.line1),
-              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in English'))
-                _buildSection2(widget.verse.line2),
-              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in English'))
-                _buildSection2(widget.verse.line3),
-              if (_selectedViews.contains('All') || _selectedViews.contains('Verse in English'))
-                _buildSection2(widget.verse.line4),
-
-              if (_selectedViews.contains('All') || _selectedViews.contains('Verse with synonyms'))
-                ...widget.verse.slines.map((sline) => _buildLine(parseLine(sline))).toList(),
-
-              _buildAudioControls(),
-
-              if (_selectedViews.contains('All') || _selectedViews.contains('Synonyms'))
-                _buildSection('Synonyms', widget.verse.textSynonyms),
-
-              if (_selectedViews.contains('All') || _selectedViews.contains('Translation'))
-                _buildSection('Translation', widget.verse.textTranslation),
-
-              if (_selectedViews.contains('All') || _selectedViews.contains('Purport'))
-                _buildSection('Purport', widget.verse.textPurport),
-
-
-            ],
+            children: lines.map((line) {
+              if (interactive) {
+                return _buildInteractiveLine(line);
+              } else {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Text(
+                    line,
+                    style: const TextStyle(fontSize: 18, height: 1.5),
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              }
+            }).toList(),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, String content) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          Text(content, style: TextStyle(fontSize: 14)),
-        ],
-      ),
-    );
-  }
-  Widget _buildSection2(String content) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(content, style: TextStyle(fontSize: 9)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAudioControls() {
-    return Column(
-      children: [
-        DropdownButton<String>(
-          value: _selectedAudio,
-          onChanged: (newValue) => setState(() {
-            _selectedAudio = newValue!;
-            _setAudioSource();
-          }),
-          items: _audioFiles.keys.map((audio) => DropdownMenuItem(value: audio, child: Text(audio))).toList(),
-        ),
-        IconButton(
-          onPressed: _playAudio,
-          icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill, color: Colors.deepPurpleAccent, size: 40.0),
-        ),
-        Slider(
-          min: 0,
-          max: _duration.inSeconds.toDouble(),
-          value: _position.inSeconds.toDouble(),
-          onChanged: (value) async => await _audioPlayer.seek(Duration(seconds: value.toInt())),
-          activeColor: Colors.deepPurpleAccent,
-          inactiveColor: Colors.grey,
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(_formatTime(_position)),
-            Text(_formatTime(_duration)),
-          ],
         ),
       ],
     );
   }
-}
 
-List<Map<String, String>> parseLine(String line) {
-  List<Map<String, String>> result = []; // Explicitly define the list type
-  List<String> words = line.split(';');
-
-  for (String word in words) {
-    List<String> parts = word.split('—'); // Split Sanskrit and translation
-    if (parts.length == 2) {
-      result.add({
-        "sanskrit": parts[0].trim(),
-        "translation": parts[1].trim()
-      });
-    }
-  }
-  return result;
-}
-
-
-Widget _buildLine(List<Map<String, String>> phrases) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      Wrap(
+  Widget _buildInteractiveLine(String line) {
+    final words = line.split(' ');
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Wrap(
         alignment: WrapAlignment.center,
-        spacing: 8.0,
+        spacing: 4.0,
         runSpacing: 4.0,
-        children: phrases.map((phrase) => Column(
-          children: [
-            Text(phrase['sanskrit'] ?? '', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-            Text(phrase['translation'] ?? '', style: TextStyle(fontSize: 8, fontStyle: FontStyle.italic, color: Colors.grey), textAlign: TextAlign.center),
-          ],
-        )).toList(),
+        children: words.map((word) {
+          // Find if this word has a synonym in the verse
+          String? meaning;
+          for (var entry in widget.verse.synonyms.entries) {
+            // Simple matching logic - could be improved
+            if (word.toLowerCase().contains(entry.key.toLowerCase()) ||
+                entry.key.toLowerCase().contains(word.toLowerCase())) {
+              meaning = entry.value.meaning;
+              break;
+            }
+          }
+
+          return GestureDetector(
+            onTap: () {
+              if (meaning != null) {
+                _toggleTooltipLock();
+              }
+            },
+            child: MouseRegion(
+              cursor: meaning != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+              onHover: (event) {
+                if (meaning != null) {
+                  final RenderBox box = context.findRenderObject() as RenderBox;
+                  final Offset position = box.localToGlobal(event.position);
+                  _showTooltip('$word: $meaning', Offset(position.dx, position.dy + 20));
+                }
+              },
+              onExit: (_) {
+                _hideTooltip();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 2.0),
+                decoration: BoxDecoration(
+                  border: meaning != null 
+                    ? const Border(bottom: BorderSide(color: Colors.deepPurpleAccent, width: 1.0))
+                    : null,
+                ),
+                child: Text(
+                  word,
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: meaning != null ? Colors.deepPurpleAccent : Colors.black87,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
-      SizedBox(height: 12.0),
-    ],
-  );
+    );
+  }
+
+  Widget _buildCollapsibleSection(
+    String title,
+    bool isExpanded,
+    VoidCallback onTap,
+    Widget content,
+  ) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      shape: RoundedRectangleBorder(
+        side: const BorderSide(color: Color(0xFFE9ECEF)),
+        borderRadius: BorderRadius.circular(4.0),
+      ),
+      elevation: 0,
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Icon(
+                    isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: Colors.deepPurpleAccent,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isExpanded) Divider(color: Colors.grey.shade300, height: 1),
+          if (isExpanded) content,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWordMeanings() {
+    if (widget.verse.synonyms.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text('Word-by-word meanings are not available for this verse.'),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: widget.verse.synonyms.entries.map((entry) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    entry.key,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    entry.value.meaning,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
 }
 
 
