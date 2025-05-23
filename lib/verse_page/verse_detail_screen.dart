@@ -170,10 +170,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
         appBar: AppBar(
           title: Text(
             'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: Color(0xFFFF9933)),
           ),
-          backgroundColor: Colors.deepPurpleAccent,
-          iconTheme: const IconThemeData(color: Colors.white),
+          backgroundColor: Color(0xFF2C2C54),
+          iconTheme: const IconThemeData(color: Color(0xFFFF9933)),
         ),
         body: Stack(
           children: [
@@ -183,7 +183,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 Container(
                   height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Color(0xFFF8F9FA),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.05),
@@ -221,7 +221,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                               Container(
                                 padding: const EdgeInsets.all(16.0),
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFFF8F9FA),
+                                  color: Color(0xFFFFE0B2),
                                   border: Border(
                                     bottom: BorderSide(
                                       color: Color(0xFFE9ECEF),
@@ -237,11 +237,12 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
+                                        color: Color(0xFF2C2C54),
                                       ),
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.bookmark_add_outlined),
-                                      color: Colors.deepPurpleAccent,
+                                      color: Color(0xFF2C2C54),
                                       onPressed: () {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           const SnackBar(
@@ -407,10 +408,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
         margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.deepPurpleAccent : Colors.grey.shade100,
+          color: isSelected ? Color(0xFF2C2C54) : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(20.0),
           border: Border.all(
-            color: isSelected ? Colors.deepPurpleAccent : Colors.grey.shade300,
+            color: isSelected ? Color(0xFF2C2C54) : Colors.grey.shade300,
             width: 1.0,
           ),
         ),
@@ -418,7 +419,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
         child: Text(
           view,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade800,
+            color: isSelected ? Color(0xFFFF9933) : Colors.black87,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 14.0,
           ),
@@ -441,9 +442,9 @@ class _GitaVersePageState extends State<GitaVersePage> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text('Scriptures'),
+            child: const Text('Scriptures', style: TextStyle(color: Color(0xFF2C2C54))),
           ),
-          const Text(' / ', style: TextStyle(color: Colors.grey)),
+          const Text(' / ', style: TextStyle(color: Color(0xFF2C2C54))),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
@@ -453,9 +454,9 @@ class _GitaVersePageState extends State<GitaVersePage> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text('Bhagavad Gita'),
+            child: const Text('Bhagavad Gita', style: TextStyle(color: Color(0xFF2C2C54))),
           ),
-          const Text(' / ', style: TextStyle(color: Colors.grey)),
+          const Text(' / ', style: TextStyle(color: Color(0xFF2C2C54))),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
@@ -465,12 +466,12 @@ class _GitaVersePageState extends State<GitaVersePage> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: Text('Chapter ${widget.verse.chapter}'),
+            child: Text('Chapter ${widget.verse.chapter}', style: TextStyle(color: Color(0xFF2C2C54))),
           ),
-          const Text(' / ', style: TextStyle(color: Colors.grey)),
+          const Text(' / ', style: TextStyle(color: Color(0xFF2C2C54))),
           Text(
             'Verse ${widget.verse.shloka}',
-            style: const TextStyle(color: Colors.grey),
+            style: const TextStyle(color: Color(0xFF2C2C54), fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -488,7 +489,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
           style: TextStyle(
             fontSize: isFullView ? 22 : 16,
             fontWeight: FontWeight.bold,
-            color: Colors.deepPurpleAccent,
+            color: Color(0xFF2C2C54),
           ),
           textAlign: TextAlign.center,
         ),
@@ -527,7 +528,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
 
   Widget _buildInteractiveLine(String line, bool isFullView) {
     final words = line.split(' ');
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Wrap(
@@ -535,10 +536,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
         spacing: 4.0,
         runSpacing: 4.0,
         children: words.map((word) {
-          // Find if this word has a synonym in the verse
           String? meaning;
           for (var entry in widget.verse.synonyms.entries) {
-            // Simple matching logic - could be improved
             if (word.toLowerCase().contains(entry.key.toLowerCase()) ||
                 entry.key.toLowerCase().contains(word.toLowerCase())) {
               meaning = entry.value.meaning;
@@ -547,36 +546,29 @@ class _GitaVersePageState extends State<GitaVersePage> {
           }
 
           return GestureDetector(
+            onTapDown: (details) {
+              if (meaning != null) {
+                final Offset position = details.globalPosition;
+                _showTooltip('$word: $meaning', Offset(position.dx, position.dy + 20));
+              }
+            },
             onTap: () {
               if (meaning != null) {
                 _toggleTooltipLock();
               }
             },
-            child: MouseRegion(
-              cursor: meaning != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
-              onHover: (event) {
-                if (meaning != null) {
-                  final RenderBox box = context.findRenderObject() as RenderBox;
-                  final Offset position = box.localToGlobal(event.position);
-                  _showTooltip('$word: $meaning', Offset(position.dx, position.dy + 20));
-                }
-              },
-              onExit: (_) {
-                _hideTooltip();
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 2.0),
-                decoration: BoxDecoration(
-                  border: meaning != null 
-                    ? const Border(bottom: BorderSide(color: Colors.deepPurpleAccent, width: 1.0))
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 2.0),
+              decoration: BoxDecoration(
+                border: meaning != null
+                    ? const Border(bottom: BorderSide(color: Color(0xFF2C2C54), width: 1.0))
                     : null,
-                ),
-                child: Text(
-                  word,
-                  style: TextStyle(
-                    fontSize: isFullView ? 22 : 18,
-                    color: meaning != null ? Colors.deepPurpleAccent : Colors.black87,
-                  ),
+              ),
+              child: Text(
+                word,
+                style: TextStyle(
+                  fontSize: isFullView ? 22 : 18,
+                  color: meaning != null ? Color(0xFF2C2C54) : Colors.black87,
                 ),
               ),
             ),
@@ -585,6 +577,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
       ),
     );
   }
+
 
   Widget _buildExpandedSection(String title, Widget content) {
     return Card(
@@ -607,7 +600,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                     fontSize: _selectedView == title.split(' ')[0] ? 22 : 16,
                     fontWeight: FontWeight.bold,
                     color: _selectedView == title.split(' ')[0] ? 
-                      Colors.deepPurpleAccent.shade400 : Colors.black87,
+                      Color(0xFF2C2C54) : Colors.black87,
                   ),
                 ),
               ],
@@ -649,7 +642,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: isFullView ? 18 : 16,
-                    color: Colors.deepPurpleAccent,
+                    color: Color(0xFF2C2C54),
                   ),
                 ),
                 const SizedBox(height: 8.0),
