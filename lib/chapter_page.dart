@@ -44,8 +44,8 @@ class _ChapterPageState extends State<ChapterPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('CHAPTER ${widget.chapterId}'),
-        backgroundColor: Colors.deepPurpleAccent,
-        foregroundColor: Colors.white,
+        backgroundColor: Color(0xFF2C2C54),
+        foregroundColor: Color(0xFFFF9933),
         actions: [
           IconButton(
             onPressed: () {
@@ -110,12 +110,12 @@ class _ChapterPageState extends State<ChapterPage> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 150, 141, 173),
+                      color: Color(0xFF2C2C54),
                     ),
                   ),
                   // Audio indicator if verse has audio
                   if (verse.audioPaths.isNotEmpty)
-                    const Icon(Icons.audiotrack, color: Colors.deepPurpleAccent),
+                    const Icon(Icons.audiotrack, color: Color(0xFF2C2C54)),
                 ],
               ),
               const Divider(),
@@ -133,7 +133,7 @@ class _ChapterPageState extends State<ChapterPage> {
                 style: const TextStyle(
                   fontSize: 12,
                   fontStyle: FontStyle.italic,
-                  color: Colors.grey,
+                  color: Colors.black87,
                 ),
               ),
             ],

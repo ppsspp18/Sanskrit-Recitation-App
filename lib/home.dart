@@ -25,11 +25,11 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(
         fontWeight: FontWeight.bold,
         letterSpacing: 2,
-        color: Colors.white,
+        color: Color(0xFFFF9933),
           ),
         ),
-        backgroundColor: Colors.deepOrange,
-        foregroundColor: Colors.white,
+        backgroundColor: Color(0xFF2C2C54),
+        foregroundColor: Color(0xFFFF9933),
         elevation: 6,
         centerTitle: true,
         shape: const RoundedRectangleBorder(
@@ -45,7 +45,7 @@ class _HomePageState extends State<HomePage> {
             MaterialPageRoute(builder: (context) => const SettingsScreen()),
           );
         },
-        icon: const Icon(Icons.settings, color: Colors.white),
+        icon: const Icon(Icons.settings, color: Color(0xFFFF9933)),
         tooltip: 'Settings',
           ),
         ],
@@ -100,7 +100,7 @@ class _HomePageState extends State<HomePage> {
                   style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
-                  color: Colors.deepPurple,
+                  color: Color(0xFF2C2C54),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -110,7 +110,7 @@ class _HomePageState extends State<HomePage> {
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.bold,
                   color: Colors.black87,
                   ),
                 ),
@@ -120,8 +120,8 @@ class _HomePageState extends State<HomePage> {
                   children: [
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurpleAccent,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Color(0xFF2C2C54),
+                    foregroundColor: Color(0xFFFF9933),
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                     textStyle: const TextStyle(fontSize: 11),
@@ -138,8 +138,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.deepPurpleAccent,
+                    backgroundColor: Color(0xFF2C2C54),
+                    foregroundColor: Color(0xFFFF9933),
                     side: const BorderSide(color: Colors.deepPurpleAccent),
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
