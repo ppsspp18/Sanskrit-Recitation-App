@@ -25,6 +25,7 @@ class _HomePageState extends State<HomePage> {
           'BHAGAVAD GITA',
           style: TextStyle(
         fontWeight: FontWeight.bold,
+        fontSize: 20,
         letterSpacing: 2,
         color: Color(0xFFFF9933),
           ),

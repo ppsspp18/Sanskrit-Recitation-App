@@ -17,7 +17,9 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Duration _position = Duration.zero;
   late String _selectedAudio;
   late Map<String, String> _audioFiles;
-  
+  Set<String> _selectedViews = {};
+
+
   // For tooltip display
   bool _tooltipVisible = false;
   String _tooltipText = '';
@@ -120,44 +122,40 @@ class _GitaVersePageState extends State<GitaVersePage> {
   // Update visibility based on selected view
   void _updateVisibility(String view) {
     setState(() {
-      _selectedView = view;
-      
-      // First hide all sections
+      // Toggle the selected view
+      if (_selectedViews.contains(view)) {
+        _selectedViews.remove(view);
+      } else {
+        _selectedViews.add(view);
+      }
+
+      // Clear all first
       _showSanskrit = false;
       _showEnglish = false;
       _showWordMeanings = false;
       _showTranslation = false;
       _showPurport = false;
-      
-      // Then show only the selected sections
-      switch (view) {
-        case 'All':
-          _showSanskrit = true;
+
+      // If 'All' is selected, show everything
+      if (_selectedViews.contains('All')) {
+        _showSanskrit = true;
+        _showEnglish = true;
+        _showWordMeanings = true;
+        _showTranslation = true;
+        _showPurport = true;
+      } else {
+        // Enable based on selected individual views
+        if (_selectedViews.contains('Sanskrit')) _showSanskrit = true;
+        if (_selectedViews.contains('English')) {
           _showEnglish = true;
-          _showWordMeanings = true;
-          _showTranslation = true;
-          _showPurport = true;
-          break;
-        case 'Sanskrit':
-          _showSanskrit = true;
-          break;
-        case 'English':
-          _showEnglish = true;
-          _showTranslation = true;
-          _showPurport = true;
-          break;
-        case 'Word Meanings':
-          _showWordMeanings = true;
-          break;
-        case 'Translation':
-          _showTranslation = true;
-          break;
-        case 'Purport':
-          _showPurport = true;
-          break;
+        }
+        if (_selectedViews.contains('Word Meanings')) _showWordMeanings = true;
+        if (_selectedViews.contains('Translation')) _showTranslation = true;
+        if (_selectedViews.contains('Purport')) _showPurport = true;
       }
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -239,7 +237,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                     Text(
                                       'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
                                       style: const TextStyle(
-                                        fontSize: 18,
+                                        fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                         color: Color(0xFF2C2C54),
                                       ),
@@ -400,22 +398,22 @@ class _GitaVersePageState extends State<GitaVersePage> {
       ),
     );
   }
-  
+
   Widget _buildViewOption(String view) {
-    final isSelected = _selectedView == view;
-    
+    final isSelected = _selectedViews.contains(view);
+
     return GestureDetector(
       onTap: () {
         _updateVisibility(view);
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+        margin: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
         decoration: BoxDecoration(
-          color: isSelected ? Color(0xFF2C2C54) : Colors.grey.shade100,
+          color: isSelected ? const Color(0xFF2C2C54) : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(20.0),
           border: Border.all(
-            color: isSelected ? Color(0xFF2C2C54) : Colors.grey.shade300,
+            color: isSelected ? const Color(0xFF2C2C54) : Colors.grey.shade300,
             width: 1.0,
           ),
         ),
@@ -423,7 +421,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
         child: Text(
           view,
           style: TextStyle(
-            color: isSelected ? Color(0xFFFF9933) : Colors.black87,
+            color: isSelected ? const Color(0xFFFF9933) : Colors.black87,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 14.0,
           ),
@@ -431,7 +429,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
       ),
     );
   }
-  
+
+
   Widget _buildBreadcrumb() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
