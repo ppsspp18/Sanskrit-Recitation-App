@@ -24,10 +24,23 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Offset _tooltipPosition = Offset.zero;
   bool _tooltipLocked = false;
   
-  // For expandable sections
+  // For content visibility
+  bool _showSanskrit = true;
+  bool _showEnglish = true;
   bool _showWordMeanings = false;
-  bool _showTranslation = false;
+  bool _showTranslation = true;
   bool _showPurport = false;
+
+  // For view selection
+  final List<String> _viewOptions = [
+    'All',
+    'Sanskrit',
+    'English',
+    'Word Meanings',
+    'Translation',
+    'Purport',
+  ];
+  String _selectedView = 'All';
 
   @override
   void initState() {
@@ -104,6 +117,44 @@ class _GitaVersePageState extends State<GitaVersePage> {
     });
   }
 
+  // Update visibility based on selected view
+  void _updateVisibility(String view) {
+    setState(() {
+      _selectedView = view;
+      
+      // First hide all sections
+      _showSanskrit = false;
+      _showEnglish = false;
+      _showWordMeanings = false;
+      _showTranslation = false;
+      _showPurport = false;
+      
+      // Then show only the selected sections
+      switch (view) {
+        case 'All':
+          _showSanskrit = true;
+          _showEnglish = true;
+          _showTranslation = true;
+          break;
+        case 'Sanskrit':
+          _showSanskrit = true;
+          break;
+        case 'English':
+          _showEnglish = true;
+          break;
+        case 'Word Meanings':
+          _showWordMeanings = true;
+          break;
+        case 'Translation':
+          _showTranslation = true;
+          break;
+        case 'Purport':
+          _showPurport = true;
+          break;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -126,223 +177,183 @@ class _GitaVersePageState extends State<GitaVersePage> {
         ),
         body: Stack(
           children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Breadcrumb navigation
-                  _buildBreadcrumb(),
-                  
-                  // Main verse card
-                  Card(
-                    elevation: 2,
-                    margin: const EdgeInsets.symmetric(vertical: 16.0),
+            Column(
+              children: [
+                // View selection row
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    children: _viewOptions.map((view) => 
+                      _buildViewOption(view),
+                    ).toList(),
+                  ),
+                ),
+                
+                // Main content - all in a single scrollable column
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Card header
-                        Container(
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFF8F9FA),
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Color(0xFFE9ECEF),
-                                width: 1.0,
-                              ),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.bookmark_add_outlined),
-                                color: Colors.deepPurpleAccent,
-                                onPressed: () {
-                                  // Add to playlist functionality would go here
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Bookmark feature coming soon'),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
+                        // Breadcrumb navigation
+                        _buildBreadcrumb(),
                         
-                        // Card body
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
+                        // Main verse card
+                        Card(
+                          elevation: 2,
+                          margin: const EdgeInsets.symmetric(vertical: 16.0),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Sanskrit (Devanagari) section
-                              if (widget.verse.sanskrit.isNotEmpty) 
-                                _buildVerseSection(
-                                  'Sanskrit (Devanagari)', 
-                                  widget.verse.sanskrit,
-                                  false, // Not interactive
-                                ),
-                              
-                              const SizedBox(height: 24.0),
-                              
-                              // Transliteration section with interactive words
-                              if (widget.verse.english.isNotEmpty) 
-                                _buildVerseSection(
-                                  'Transliteration (IAST)', 
-                                  widget.verse.english,
-                                  true, // Interactive for hover tooltips
-                                ),
-                              
-                              const SizedBox(height: 16.0),
-                              
-                              // Collapsible sections
-                              _buildCollapsibleSection(
-                                'Word-by-Word Translation',
-                                _showWordMeanings,
-                                () => setState(() => _showWordMeanings = !_showWordMeanings),
-                                _buildWordMeanings(),
-                              ),
-                              
-                              _buildCollapsibleSection(
-                                'Translation',
-                                _showTranslation,
-                                () => setState(() => _showTranslation = !_showTranslation),
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Text(
-                                    widget.verse.translation,
-                                    style: const TextStyle(fontSize: 16, height: 1.6),
+                              // Card header
+                              Container(
+                                padding: const EdgeInsets.all(16.0),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF8F9FA),
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: Color(0xFFE9ECEF),
+                                      width: 1.0,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              
-                              _buildCollapsibleSection(
-                                'Purport',
-                                _showPurport,
-                                () => setState(() => _showPurport = !_showPurport),
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Text(
-                                    widget.verse.purport,
-                                    style: const TextStyle(fontSize: 16, height: 1.6),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                        // Audio player section
-                        if (widget.verse.audioPaths.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.all(16.0),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFF8F9FA),
-                              border: Border(
-                                top: BorderSide(
-                                  color: Color(0xFFE9ECEF),
-                                  width: 1.0,
-                                ),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Audio',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 16.0),
-                                
-                                // Audio player controls
-                                Row(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    IconButton(
-                                      onPressed: _playAudio,
-                                      icon: Icon(
-                                        isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
-                                        color: Colors.deepPurpleAccent,
-                                        size: 40.0,
+                                    Text(
+                                      'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    const SizedBox(width: 8.0),
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          SliderTheme(
-                                            data: SliderTheme.of(context).copyWith(
-                                              activeTrackColor: Colors.deepPurpleAccent,
-                                              inactiveTrackColor: Colors.grey.shade300,
-                                              thumbColor: Colors.deepPurpleAccent,
-                                              overlayColor: Colors.deepPurple.withOpacity(0.2),
-                                              trackHeight: 4.0,
-                                            ),
-                                            child: Slider(
-                                              min: 0,
-                                              max: _duration.inSeconds.toDouble(),
-                                              value: _position.inSeconds.toDouble(),
-                                              onChanged: (value) async {
-                                                await _audioPlayer.seek(Duration(seconds: value.toInt()));
-                                              },
-                                            ),
+                                    IconButton(
+                                      icon: const Icon(Icons.bookmark_add_outlined),
+                                      color: Colors.deepPurpleAccent,
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Bookmark feature coming soon'),
                                           ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              children: [
-                                                Text(_formatTime(_position)),
-                                                Text(_formatTime(_duration)),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
-                                
-                                if (_audioFiles.length > 1) ...[
-                                  const SizedBox(height: 16.0),
-                                  DropdownButton<String>(
-                                    value: _selectedAudio,
-                                    isExpanded: true,
-                                    onChanged: (newValue) {
-                                      if (newValue != null) {
-                                        setState(() {
-                                          _selectedAudio = newValue;
-                                          _setAudioSource();
-                                        });
-                                      }
-                                    },
-                                    items: _audioFiles.keys.map((audio) {
-                                      return DropdownMenuItem<String>(
-                                        value: audio,
-                                        child: Text(audio),
-                                      );
-                                    }).toList(),
+                              ),
+                              
+                              // Card body - dynamic content based on selected view
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Sanskrit (Devanagari) section
+                                    if (_showSanskrit && widget.verse.sanskrit.isNotEmpty) 
+                                      _buildVerseSection(
+                                        'Sanskrit (Devanagari)', 
+                                        widget.verse.sanskrit,
+                                        false, // Not interactive
+                                        _selectedView == 'Sanskrit', // Larger text for Sanskrit-only view
+                                      ),
+                                    
+                                    if (_showSanskrit && _showEnglish)
+                                      const SizedBox(height: 24.0),
+                                    
+                                    // Transliteration section with interactive words
+                                    if (_showEnglish && widget.verse.english.isNotEmpty) 
+                                      _buildVerseSection(
+                                        'Transliteration (IAST)', 
+                                        widget.verse.english,
+                                        true, // Interactive for hover tooltips
+                                        _selectedView == 'English', // Larger text for English-only view
+                                      ),
+                                    
+                                    if (_showWordMeanings || _showTranslation || _showPurport)
+                                      const SizedBox(height: 16.0),
+                                    
+                                    // Word Meanings section
+                                    if (_showWordMeanings)
+                                      _buildExpandedSection(
+                                        'Word-by-Word Translation',
+                                        _buildWordMeanings(_selectedView == 'Word Meanings'),
+                                      ),
+                                    
+                                    if (_showWordMeanings && (_showTranslation || _showPurport))
+                                      const SizedBox(height: 16.0),
+                                    
+                                    // Translation section
+                                    if (_showTranslation)
+                                      _buildExpandedSection(
+                                        'Translation',
+                                        Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Text(
+                                            widget.verse.translation,
+                                            style: TextStyle(
+                                              fontSize: _selectedView == 'Translation' ? 18 : 16, 
+                                              height: 1.6
+                                            ),
+                                            textAlign: TextAlign.justify,
+                                          ),
+                                        ),
+                                      ),
+                                    
+                                    if (_showTranslation && _showPurport)
+                                      const SizedBox(height: 16.0),
+                                    
+                                    // Purport section
+                                    if (_showPurport)
+                                      _buildExpandedSection(
+                                        'Purport',
+                                        Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Text(
+                                            widget.verse.purport,
+                                            style: const TextStyle(fontSize: 16, height: 1.6),
+                                            textAlign: TextAlign.justify,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              
+                              // Audio player section
+                              if (widget.verse.audioPaths.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.all(16.0),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFF8F9FA),
+                                    border: Border(
+                                      top: BorderSide(
+                                        color: Color(0xFFE9ECEF),
+                                        width: 1.0,
+                                      ),
+                                    ),
                                   ),
-                                ],
-                              ],
-                            ),
+                                  child: _buildAudioPlayerControls(),
+                                ),
+                            ],
                           ),
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
             
             // Tooltip overlay
@@ -384,7 +395,38 @@ class _GitaVersePageState extends State<GitaVersePage> {
       ),
     );
   }
-
+  
+  Widget _buildViewOption(String view) {
+    final isSelected = _selectedView == view;
+    
+    return GestureDetector(
+      onTap: () {
+        _updateVisibility(view);
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.deepPurpleAccent : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(20.0),
+          border: Border.all(
+            color: isSelected ? Colors.deepPurpleAccent : Colors.grey.shade300,
+            width: 1.0,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          view,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey.shade800,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 14.0,
+          ),
+        ),
+      ),
+    );
+  }
+  
   Widget _buildBreadcrumb() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -435,7 +477,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     );
   }
 
-  Widget _buildVerseSection(String title, String content, bool interactive) {
+  Widget _buildVerseSection(String title, String content, bool interactive, bool isFullView) {
     final lines = content.split('\n');
     
     return Column(
@@ -443,8 +485,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
+          style: TextStyle(
+            fontSize: isFullView ? 22 : 16,
             fontWeight: FontWeight.bold,
             color: Colors.deepPurpleAccent,
           ),
@@ -462,13 +504,16 @@ class _GitaVersePageState extends State<GitaVersePage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: lines.map((line) {
               if (interactive) {
-                return _buildInteractiveLine(line);
+                return _buildInteractiveLine(line, isFullView);
               } else {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Text(
                     line,
-                    style: const TextStyle(fontSize: 18, height: 1.5),
+                    style: TextStyle(
+                      fontSize: isFullView ? 24 : 18, 
+                      height: 1.5
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 );
@@ -480,7 +525,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     );
   }
 
-  Widget _buildInteractiveLine(String line) {
+  Widget _buildInteractiveLine(String line, bool isFullView) {
     final words = line.split(' ');
     
     return Padding(
@@ -529,7 +574,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 child: Text(
                   word,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: isFullView ? 22 : 18,
                     color: meaning != null ? Colors.deepPurpleAccent : Colors.black87,
                   ),
                 ),
@@ -541,12 +586,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     );
   }
 
-  Widget _buildCollapsibleSection(
-    String title,
-    bool isExpanded,
-    VoidCallback onTap,
-    Widget content,
-  ) {
+  Widget _buildExpandedSection(String title, Widget content) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       shape: RoundedRectangleBorder(
@@ -556,36 +596,31 @@ class _GitaVersePageState extends State<GitaVersePage> {
       elevation: 0,
       child: Column(
         children: [
-          InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: _selectedView == title.split(' ')[0] ? 22 : 16,
+                    fontWeight: FontWeight.bold,
+                    color: _selectedView == title.split(' ')[0] ? 
+                      Colors.deepPurpleAccent.shade400 : Colors.black87,
                   ),
-                  Icon(
-                    isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    color: Colors.deepPurpleAccent,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          if (isExpanded) Divider(color: Colors.grey.shade300, height: 1),
-          if (isExpanded) content,
+          Divider(color: Colors.grey.shade300, height: 1),
+          content,
         ],
       ),
     );
   }
 
-  Widget _buildWordMeanings() {
+  Widget _buildWordMeanings([bool isFullView = false]) {
     if (widget.verse.synonyms.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
@@ -594,37 +629,164 @@ class _GitaVersePageState extends State<GitaVersePage> {
     }
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(isFullView ? 0.0 : 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: widget.verse.synonyms.entries.map((entry) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Row(
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16.0),
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              color: isFullView ? Colors.grey.shade50 : null,
+              borderRadius: isFullView ? BorderRadius.circular(8.0) : null,
+              border: isFullView ? Border.all(color: Colors.grey.shade200) : null,
+            ),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    entry.key,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                Text(
+                  entry.key,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: isFullView ? 18 : 16,
+                    color: Colors.deepPurpleAccent,
                   ),
                 ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    entry.value.meaning,
-                    style: const TextStyle(fontSize: 16),
-                  ),
+                const SizedBox(height: 8.0),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Word: ",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: isFullView ? 16 : 14,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        entry.value.versetext,
+                        style: TextStyle(
+                          fontSize: isFullView ? 16 : 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4.0),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Meaning: ",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: isFullView ? 16 : 14,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        entry.value.meaning,
+                        style: TextStyle(
+                          fontSize: isFullView ? 16 : 14,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           );
         }).toList(),
       ),
+    );
+  }
+  
+  Widget _buildAudioPlayerControls() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Audio Recitation',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16.0),
+        
+        // Audio player controls
+        Row(
+          children: [
+            IconButton(
+              onPressed: _playAudio,
+              icon: Icon(
+                isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
+                color: Colors.deepPurpleAccent,
+                size: 40.0,
+              ),
+            ),
+            const SizedBox(width: 8.0),
+            Expanded(
+              child: Column(
+                children: [
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: Colors.deepPurpleAccent,
+                      inactiveTrackColor: Colors.grey.shade300,
+                      thumbColor: Colors.deepPurpleAccent,
+                      overlayColor: Colors.deepPurple.withOpacity(0.2),
+                      trackHeight: 4.0,
+                    ),
+                    child: Slider(
+                      min: 0,
+                      max: _duration.inSeconds.toDouble(),
+                      value: _position.inSeconds.toDouble(),
+                      onChanged: (value) async {
+                        await _audioPlayer.seek(Duration(seconds: value.toInt()));
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_formatTime(_position)),
+                        Text(_formatTime(_duration)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        
+        if (_audioFiles.length > 1) ...[
+          const SizedBox(height: 16.0),
+          DropdownButton<String>(
+            value: _selectedAudio,
+            isExpanded: true,
+            onChanged: (newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _selectedAudio = newValue;
+                  _setAudioSource();
+                });
+              }
+            },
+            items: _audioFiles.keys.map((audio) {
+              return DropdownMenuItem<String>(
+                value: audio,
+                child: Text(audio),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
     );
   }
 }
