@@ -103,6 +103,11 @@ class VerseRepository {
     final allVerses = await getAllVerses();
     return allVerses.where((verse) => verse.chapter == chapterId).toList();
   }
+  Future<List<Verse_1>> getVersesForChapterAndShloka(String chapterId, String shlokaId) async {
+    final allVerses = await getAllVerses();
+    return allVerses.where((verse) => verse.chapter == chapterId && verse.shloka == shlokaId).toList();
+  }
+  
 
   /// Get a specific verse by chapter and shloka
   Future<Verse_1?> getVerse(String chapter, String shloka) async {

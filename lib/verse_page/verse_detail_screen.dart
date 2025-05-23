@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
-
+import 'package:sanskrit_racitatiion_project/verse_page/verse_repository.dart';
 class GitaVersePage extends StatefulWidget {
   final Verse_1 verse;
   final void Function(bool)? onNavigate; // Callback for navigation
@@ -17,6 +17,23 @@ class GitaVersePage extends StatefulWidget {
 }
 
 class _GitaVersePageState extends State<GitaVersePage> {
+  // UI Constants for consistent theming
+  // Colors
+  static const Color primaryColor = Colors.deepOrangeAccent;
+  static const Color dividerColor = Color(0xFFE9ECEF);
+  static const Color textPrimaryColor = Colors.black;
+  static const Color textSecondaryColor = Colors.grey;
+  static const Color errorColor = Colors.red;
+  
+  // Font Sizes
+  static const double fontSizeHeading = 18.0;
+  static const double fontSizeSubheading = 16.0;
+  static const double fontSizeBody = 18.0;
+  static const double fontSizeCaption = 14.0;
+  static const double fontSizeSmall = 12.0;
+  static const double fontSizeSanskrit = 25.0;  // For Sanskrit words
+  static const double fontSizeMeaning = 16.0;   // For word meanings
+  
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool isPlaying = false;
   Duration _duration = Duration.zero;
@@ -25,7 +42,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
   bool _isLoading = false;
   
   // For tooltip display
-  bool _tooltipVisible = false;
+  bool _tooltipVisible = true;
   String _tooltipText = '';
   Offset _tooltipPosition = Offset.zero;
   bool _tooltipLocked = false;
@@ -41,7 +58,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
   // For content visibility
   bool _showDevanagari = true;
   bool _showTransliteration = true;
-  bool _showSynonyms = false; // Changed to true by default
+  bool _showSynonyms = true; // Changed to true by default
   bool _showTranslation = true;
   bool _showPurport = false;
 
@@ -288,10 +305,42 @@ class _GitaVersePageState extends State<GitaVersePage> {
 
   // Navigate to next verse
   void _navigateToNextVerse() {
+    // Check if this is the last verse
+    if (_isLastVerse()) {
+      // Show feedback that this is the last verse
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This is the last verse in this chapter'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    
     if (widget.onNavigate != null) {
-      // Direct navigation without alert
+      // Direct navigation to next verse
       widget.onNavigate!(true);
     } else {
+      // Get current verse details
+      final currentChapter = widget.verse.chapter;
+      final currentShloka = int.parse(widget.verse.shloka.toString());
+      
+      // Calculate next verse
+      final nextShloka = (currentShloka + 1).toString();
+      
+      // Here you would typically fetch the next verse from your data source
+      // This is a placeholder - you need to implement verse fetching logic
+      // based on your actual data structure
+      
+
+      
+      // For now, just show a message that navigation isn't implemented
+      ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Navigation to specific verses not implemented yet'),
+        duration: Duration(seconds: 2),
+      ),
+      );
       // Fallback if no navigation callback provided
       Navigator.pop(context);
     }
@@ -312,10 +361,13 @@ class _GitaVersePageState extends State<GitaVersePage> {
       13: 35, 14: 27, 15: 20, 16: 24, 17: 28, 18: 78
     };
     
-    int? totalVerses = chapterVerseCount[widget.verse.chapter];
-    return totalVerses != null && widget.verse.shloka == totalVerses;
+    int? totalVerses = chapterVerseCount[int.parse(widget.verse.chapter.toString())];
+    return totalVerses != null && int.parse(widget.verse.shloka.toString()) == totalVerses;
   }
   
+ 
+  
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -323,7 +375,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
         if (_tooltipLocked) {
           setState(() {
             _tooltipLocked = false;
-            _tooltipVisible = false;
+            _tooltipVisible = true;
           });
         }
       },
@@ -347,7 +399,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
             'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
             style: const TextStyle(color: Colors.white),
           ),
-          backgroundColor: Colors.deepPurpleAccent,
+          backgroundColor: _GitaVersePageState.primaryColor,
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
             // Advanced view toggle in AppBar
@@ -377,7 +429,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // Main verse card
                         Card(
@@ -388,28 +440,28 @@ class _GitaVersePageState extends State<GitaVersePage> {
                               // Card header
                               Container(
                                 padding: const EdgeInsets.all(16.0),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFF8F9FA),
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: Color(0xFFE9ECEF),
-                                      width: 1.0,
-                                    ),
-                                  ),
-                                ),
+                                // decoration: const BoxDecoration(
+                                //   color: _GitaVersePageState.cardBackgroundColor,
+                                //   border: Border(
+                                //     bottom: BorderSide(
+                                //       color: _GitaVersePageState.dividerColor,
+                                //       width: 1.0,
+                                //     ),
+                                //   ),
+                                // ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
                                       style: const TextStyle(
-                                        fontSize: 18,
+                                        fontSize: _GitaVersePageState.fontSizeHeading,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.bookmark_add_outlined),
-                                      color: Colors.deepPurpleAccent,
+                                      color: _GitaVersePageState.primaryColor,
                                       onPressed: () {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           const SnackBar(
@@ -426,7 +478,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                               Padding(
                                 padding: const EdgeInsets.all(16.0),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     // Sanskrit (Devanagari) section
                                     if (_showDevanagari && widget.verse.sanskrit.isNotEmpty) 
@@ -469,7 +521,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                           child: Text(
                                             widget.verse.translation,
                                             style: const TextStyle(
-                                              fontSize: 16, 
+                                              fontSize: _GitaVersePageState.fontSizeBody, // Increased from 16 to 18
                                               height: 1.6
                                             ),
                                             textAlign: TextAlign.justify,
@@ -488,7 +540,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                           padding: const EdgeInsets.all(16.0),
                                           child: Text(
                                             widget.verse.purport,
-                                            style: const TextStyle(fontSize: 16, height: 1.6),
+                                            style: const TextStyle(fontSize: _GitaVersePageState.fontSizeBody, height: 1.6), // Increased from 16 to 18
                                             textAlign: TextAlign.justify,
                                           ),
                                         ),
@@ -500,15 +552,15 @@ class _GitaVersePageState extends State<GitaVersePage> {
                               // Audio player section
                               Container(
                                 padding: const EdgeInsets.all(16.0),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFF8F9FA),
-                                  border: Border(
-                                    top: BorderSide(
-                                      color: Color(0xFFE9ECEF),
-                                      width: 1.0,
-                                    ),
-                                  ),
-                                ),
+                                // decoration: const BoxDecoration(
+                                //   color: _GitaVersePageState.cardBackgroundColor,
+                                //   border: Border(
+                                //     top: BorderSide(
+                                //       color: _GitaVersePageState.dividerColor,
+                                //       width: 1.0,
+                                //     ),
+                                //   ),
+                                // ),
                                 child: widget.verse.audioPath != null
                                   ? _buildAudioPlayerControls()
                                   : _buildAudioComingSoon(),
@@ -538,24 +590,24 @@ class _GitaVersePageState extends State<GitaVersePage> {
                       maxWidth: MediaQuery.of(context).size.width * 0.7,
                     ),
                     padding: const EdgeInsets.all(12.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 6.0,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: _tooltipLocked ? Colors.deepPurpleAccent : Colors.grey.shade300,
-                        width: 1.0,
-                      ),
-                    ),
+                    // decoration: BoxDecoration(
+                    //   color: _GitaVersePageState.backgroundColor,
+                    //   borderRadius: BorderRadius.circular(8.0),
+                    //   boxShadow: [
+                    //     BoxShadow(
+                    //       color: Colors.black.withOpacity(0.2),
+                    //       blurRadius: 6.0,
+                    //       offset: const Offset(0, 2),
+                    //     ),
+                    //   ],
+                    //   border: Border.all(
+                    //     color: _tooltipLocked ? _GitaVersePageState.primaryColor : Colors.grey.shade300,
+                    //     width: 1.0,
+                    //   ),
+                    // ),
                     child: Text(
                       _tooltipText,
-                      style: const TextStyle(fontSize: 14.0),
+                      style: const TextStyle(fontSize: _GitaVersePageState.fontSizeCaption),
                     ),
                   ),
                 ),
@@ -570,23 +622,23 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Widget _buildAdvancedViewControls() {
     return Container(
       padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      // decoration: BoxDecoration(
+      //   // color: _GitaVersePageState.backgroundColor,
+      //   boxShadow: [
+      //     BoxShadow(
+      //       color: Colors.black.withOpacity(0.05),
+      //       blurRadius: 4,
+      //       offset: const Offset(0, 2),
+      //     ),
+      //   ],
+      // ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Show/Hide Sections',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: _GitaVersePageState.fontSizeSubheading,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -625,7 +677,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: Colors.deepPurpleAccent,
+          activeColor: _GitaVersePageState.primaryColor,
         ),
         Text(label),
       ],
@@ -636,24 +688,24 @@ class _GitaVersePageState extends State<GitaVersePage> {
     final lines = content.split('\n');
     
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           title,
           style: const TextStyle(
-            fontSize: 18,
+            fontSize: _GitaVersePageState.fontSizeHeading,
             fontWeight: FontWeight.bold,
-            color: Colors.deepPurpleAccent,
+            color: _GitaVersePageState.primaryColor,
           ),
         ),
         const SizedBox(height: 12.0),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFAFAFA),
-            borderRadius: BorderRadius.circular(8.0),
-          ),
+          // decoration: BoxDecoration(
+          //   color: _GitaVersePageState.verseBgColor,
+          //   borderRadius: BorderRadius.circular(8.0),
+          // ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: lines.map((line) {
@@ -661,11 +713,11 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 return _buildInteractiveLine(line);
               } else {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  padding: const EdgeInsets.symmetric(vertical: 5.0),
                   child: Text(
                     line,
                     style: const TextStyle(
-                      fontSize: 18, 
+                      fontSize: _GitaVersePageState.fontSizeBody, 
                       height: 1.5
                     ),
                     textAlign: TextAlign.center,
@@ -680,63 +732,177 @@ class _GitaVersePageState extends State<GitaVersePage> {
   }
 
   Widget _buildInteractiveLine(String line) {
-    final words = line.split(' ');
+    final rawWords = line.split(RegExp(r"[ ’ ]")); // there is another ’ in the line so we need to split the line with space
+    final List<String> words = [];
+    final List<String?> meanings = [];
+    final Set<String> usedSynonyms = {};
+    final List<String> final_Words = [];
     
+    // Process all words, including hyphenated ones
+    for (String rawWord in rawWords) {
+      if (rawWord.contains('-')) {
+        // Split hyphenated words
+        final parts = rawWord.split('-');
+
+        for (int i = 0; i < parts.length; i++) {
+          String part = parts[i];
+          // // Add hyphen back except for the last part
+          if (i==0) {
+            part = '$part-';
+          }
+          words.add(part);
+        }
+      } else if (rawWord.contains('\'')) {
+        // Handle words with apostrophes
+        final parts = rawWord.split('\'');
+        for (String part in parts) {
+          if (parts.indexOf(part) == 0) {
+            part =  "$part'";
+          }
+          words.add(part);
+        }
+      } else if (rawWord.contains(',')) {
+        // Handle words with commas
+        final parts = rawWord.split(',');
+        for (String part in parts) {
+          // add comma back except for the first part
+          if (parts.indexOf(part) == 0) {
+            part =  "$part,";
+          }
+          words.add(part);
+        }
+      }  else {
+        words.add(rawWord);
+      }
+    }
+    
+    // Find meanings for each word
+    for (String word in words) {
+      String? meaning;
+      print('Word: $word');
+      
+      // Clean the word for comparison (remove punctuation)
+      String cleanWord = word;
+      // Check if this word has a synonym in the verse data
+      for (var entry in widget.verse.synonyms.entries) {
+        // Skip if this synonym key has already been used
+        if (usedSynonyms.contains(entry.key)) continue;
+        
+        String cleanKey = entry.key.toLowerCase();
+        print('$cleanKey $cleanWord');
+        // Check if t`he first 70 percent part of the word matches with first part of synonyms
+        if (cleanWord.length < 3 || cleanKey.length < 3) {
+          if (cleanWord == cleanKey) {
+            meaning = entry.value.meaning;
+            usedSynonyms.add(entry.key);
+            break;
+          }
+        } else if (cleanWord.startsWith(cleanKey.substring(0, (cleanKey.length * 0.5).round()))) {
+          meaning = entry.value.meaning;
+          usedSynonyms.add(entry.key);
+          break;
+        } 
+        else if (cleanWord.contains(cleanKey.substring(0, (cleanKey.length * 0.5).round()))) {
+          meaning = entry.value.meaning;
+          usedSynonyms.add(entry.key);
+          break;
+        }
+        else if (cleanKey.contains(cleanWord.substring(0, (cleanWord.length * 0.5).round()))) {
+          meaning = entry.value.meaning;
+          usedSynonyms.add(entry.key);
+          break;
+        }
+        else if (cleanKey.startsWith(cleanWord.substring(0, (cleanWord.length * 0.5).round()))) {
+          meaning = entry.value.meaning;
+          usedSynonyms.add(entry.key);
+          break;
+        }
+      }
+      
+      // // Check for custom meaning
+      // if (_customMeanings.containsKey(word)) {
+      //   meaning = _customMeanings[word];
+      // } else {
+
+      //   meaning ??= ' ';
+      // }
+      // if no meaning found then append the present word to previous word part and store the final word in a new list
+      if (meaning == null) {
+        // add the word to the previous word part
+        word = final_Words.isNotEmpty ? final_Words.last + word : word;
+        if (final_Words.isNotEmpty) {
+          final_Words.removeLast();
+        }
+        final_Words.add(word);
+      } else {
+        // add the word to the final words list
+        final_Words.add(word);
+      }
+      // Store the meaning in the list
+      meanings.add(meaning);
+
+        
+    }
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 1.0),
       child: Container(
         width: double.infinity,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8C8DC), // Pink background color matching the image
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
-        child: Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 12.0,
-          runSpacing: 24.0, // More space between lines
-          children: words.map((word) {
-            // Check if this word has a synonym in the verse data
-            String? meaning;
-            for (var entry in widget.verse.synonyms.entries) {
-              if (word.toLowerCase().contains(entry.key.toLowerCase()) ||
-                  entry.key.toLowerCase().contains(word.toLowerCase())) {
-                meaning = entry.value.meaning;
-                break;
-              }
-            }
-            
-            // Check if there's a custom meaning added by user
-            if (_customMeanings.containsKey(word)) {
-              meaning = _customMeanings[word];
-            }
-            
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Sanskrit word text in larger font
-                Text(
-                  word,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w500,
-                  ),
+        padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // First line: Display the original line with all words
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(bottom: 6.0),
+              child: Text(
+                line,
+                style: const TextStyle(
+                  fontSize: fontSizeSanskrit,
+                  color: textPrimaryColor,
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(height: 4),
-                // Show meaning below the word in light gray
-                Text(
-                  meaning ?? ' ', // Show space if no meaning
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                    fontStyle: FontStyle.italic,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            );
-          }).toList(),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            
+            // Second line: Meanings aligned with each word
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                runAlignment: WrapAlignment.start,
+                children: List.generate(final_Words.length, (index) {
+                  final word = final_Words[index];
+                  final meaning = meanings[index];
+                  
+                  // Calculate approximate width for word
+                  final wordWidth = (word.length * fontSizeSanskrit * 1).clamp(30.0, 200.0);
+                  
+                  return SizedBox(
+                    width: wordWidth,
+                    // padding: const EdgeInsets.only(right: 2.0),
+                    // margin: const EdgeInsets.only(bottom: 4.0),
+                    child: meaning != null ? Text(
+                      meaning,
+                      style: const TextStyle(
+                        fontSize: fontSizeMeaning,
+                        color: textSecondaryColor,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                    ) : const SizedBox.shrink( // If no meaning, show empty space
+                
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -768,7 +934,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurpleAccent,
+                backgroundColor: _GitaVersePageState.primaryColor,
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
@@ -783,7 +949,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Meaning added for "$word"'),
-                      backgroundColor: Colors.deepPurpleAccent,
+                      backgroundColor: _GitaVersePageState.primaryColor,
                     ),
                   );
                 }
@@ -800,7 +966,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
       shape: RoundedRectangleBorder(
-        side: const BorderSide(color: Color(0xFFE9ECEF)),
+        side: const BorderSide(color: _GitaVersePageState.dividerColor),
         borderRadius: BorderRadius.circular(4.0),
       ),
       elevation: 0,
@@ -814,15 +980,15 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: _GitaVersePageState.fontSizeHeading,
                     fontWeight: FontWeight.bold,
-                    color: Colors.deepPurpleAccent,
+                    color: _GitaVersePageState.primaryColor,
                   ),
                 ),
               ],
             ),
           ),
-          Divider(color: Colors.grey.shade300, height: 1),
+          const Divider(color: _GitaVersePageState.dividerColor, height: 1),
           content,
         ],
       ),
@@ -833,82 +999,32 @@ class _GitaVersePageState extends State<GitaVersePage> {
     if (widget.verse.synonyms.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
-        child: Text('Word-by-word meanings are not available for this verse.'),
+        child: Text(
+          'Word-by-word meanings are not available for this verse.',
+          style: TextStyle(fontSize: _GitaVersePageState.fontSizeBody),
+        ),
       );
     }
 
+    // Create a single string with the format:
+    // sanskrit1 — meaning1; sanskrit2 — meaning2; ...
+    String formattedMeanings = '';
+    widget.verse.synonyms.entries.forEach((entry) {
+      if (formattedMeanings.isNotEmpty) {
+        formattedMeanings += '; ';
+      }
+      formattedMeanings += '${entry.key} — ${entry.value.meaning}';
+    });
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: widget.verse.synonyms.entries.map((entry) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16.0),
-            padding: const EdgeInsets.all(12.0),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(8.0),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.key,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.deepPurpleAccent,
-                  ),
-                ),
-                const SizedBox(height: 8.0),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Word: ",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        entry.value.versetext,
-                        style: const TextStyle(
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4.0),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Meaning: ",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        entry.value.meaning,
-                        style: const TextStyle(
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        }).toList(),
+      child: Text(
+        formattedMeanings,
+        style: const TextStyle(
+          fontSize: _GitaVersePageState.fontSizeBody,
+          height: 1.6,
+        ),
+        textAlign: TextAlign.justify,
       ),
     );
   }
@@ -930,39 +1046,53 @@ class _GitaVersePageState extends State<GitaVersePage> {
               icon: const Icon(Icons.arrow_back),
               label: const Text('Previous Verse'),
               style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white, 
-                backgroundColor: Colors.deepPurpleAccent,
+                foregroundColor: Colors.white, // Fix: Set text color to white
+                backgroundColor: _GitaVersePageState.primaryColor,
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               ),
-            ),
+            ), // Add ripple effect for better feedback
           // Spacer when only one button is shown
           if (isFirst && !isLast || !isFirst && isLast)
             const Spacer(),
           // Next verse button - right side
           if (!isLast)
-            ElevatedButton.icon(
-              onPressed: _navigateToNextVerse,
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('Next Verse'),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white, 
-                backgroundColor: Colors.deepPurpleAccent,
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-              ),
-            ),
+            _addRippleEffect(
+              ElevatedButton.icon(
+                onPressed: _navigateToNextVerse,
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text('Next Verse'),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white, 
+                  backgroundColor: _GitaVersePageState.primaryColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                ),
+              )
+            ), // Add ripple effect for better feedback
         ],
+      ),
+    );
+  }
+  
+  // Helper method to add ripple effect to buttons
+  Widget _addRippleEffect(Widget widget) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        splashColor: Colors.white.withAlpha(77),
+        highlightColor: Colors.white.withAlpha(26),
+        child: widget,
       ),
     );
   }
   
   Widget _buildAudioPlayerControls() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const Text(
           'Audio Recitation',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: _GitaVersePageState.fontSizeHeading,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -973,19 +1103,19 @@ class _GitaVersePageState extends State<GitaVersePage> {
               onPressed: _isLoading ? null : _playAudio,
               icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled),
               iconSize: 48.0,
-              color: Colors.deepPurpleAccent,
-              disabledColor: Colors.grey,
+              color: _GitaVersePageState.primaryColor,
+              disabledColor: _GitaVersePageState.textSecondaryColor,
             ),
             const SizedBox(width: 8.0),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Slider(
                     value: _position.inSeconds.toDouble(),
                     max: _duration.inSeconds.toDouble(),
                     min: 0,
-                    activeColor: Colors.deepPurpleAccent,
+                    activeColor: _GitaVersePageState.primaryColor,
                     inactiveColor: Colors.grey.shade300,
                     onChanged: _isLoading || _errorMessage != null
                       ? null
@@ -1001,15 +1131,15 @@ class _GitaVersePageState extends State<GitaVersePage> {
                         Text(
                           _formatTime(_position),
                           style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12.0,
+                            color: _GitaVersePageState.textSecondaryColor,
+                            fontSize: _GitaVersePageState.fontSizeSmall,
                           ),
                         ),
                         Text(
                           _formatTime(_duration),
                           style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12.0,
+                            color: _GitaVersePageState.textSecondaryColor,
+                            fontSize: _GitaVersePageState.fontSizeSmall,
                           ),
                         ),
                       ],
@@ -1026,8 +1156,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
             child: Text(
               'Loading audio...',
               style: TextStyle(
-                color: Colors.grey,
-                fontSize: 14.0,
+                color: _GitaVersePageState.textSecondaryColor,
+                fontSize: _GitaVersePageState.fontSizeCaption,
               ),
             ),
           ),
@@ -1037,8 +1167,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
             child: Text(
               _errorMessage!,
               style: const TextStyle(
-                color: Colors.red,
-                fontSize: 14.0,
+                color: _GitaVersePageState.errorColor,
+                fontSize: _GitaVersePageState.fontSizeCaption,
               ),
             ),
           ),
@@ -1048,12 +1178,12 @@ class _GitaVersePageState extends State<GitaVersePage> {
   
   Widget _buildAudioComingSoon() {
     return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           'Audio Recitation',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: _GitaVersePageState.fontSizeHeading,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -1061,8 +1191,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
         Text(
           'Audio recitation coming soon for this verse.',
           style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14.0,
+            color: _GitaVersePageState.textSecondaryColor,
+            fontSize: _GitaVersePageState.fontSizeCaption,
           ),
         ),
       ],
