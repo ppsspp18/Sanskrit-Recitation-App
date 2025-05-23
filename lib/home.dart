@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart';
 // import 'package:sanskrit_racitatiion_project/verse_page/chapterPage.dart';
 import 'package:sanskrit_racitatiion_project/chapter_page.dart';
+import 'package:sanskrit_racitatiion_project/search.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -39,14 +40,24 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const SettingsScreen()),
-          );
-        },
-        icon: const Icon(Icons.settings, color: Color(0xFFFF9933)),
-        tooltip: 'Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchScreen()),
+              );
+            },
+            icon: const Icon(Icons.search, color: Color(0xFFFF9933)), // Search icon
+            tooltip: 'Search',
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+            icon: const Icon(Icons.settings, color: Color(0xFFFF9933)), // Settings icon
+            tooltip: 'Settings',
           ),
         ],
       ),

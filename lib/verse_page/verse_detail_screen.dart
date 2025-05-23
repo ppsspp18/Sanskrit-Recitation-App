@@ -134,13 +134,17 @@ class _GitaVersePageState extends State<GitaVersePage> {
         case 'All':
           _showSanskrit = true;
           _showEnglish = true;
+          _showWordMeanings = true;
           _showTranslation = true;
+          _showPurport = true;
           break;
         case 'Sanskrit':
           _showSanskrit = true;
           break;
         case 'English':
           _showEnglish = true;
+          _showTranslation = true;
+          _showPurport = true;
           break;
         case 'Word Meanings':
           _showWordMeanings = true;
