@@ -337,7 +337,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                 Container(
                                   padding: const EdgeInsets.all(16.0),
                                   decoration: const BoxDecoration(
-                                    color: Color(0xFFF8F9FA),
+                                    color: Color(0xFFFFF8E1),
                                     border: Border(
                                       top: BorderSide(
                                         color: Color(0xFFE9ECEF),
@@ -380,7 +380,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                         ),
                       ],
                       border: Border.all(
-                        color: _tooltipLocked ? Colors.deepPurpleAccent : Colors.grey.shade300,
+                        color: _tooltipLocked ? Color(0xFF2C2C54) : Colors.grey.shade300,
                         width: 1.0,
                       ),
                     ),
@@ -706,6 +706,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
+            color: Color(0xFF2C2C54),
           ),
         ),
         const SizedBox(height: 16.0),
@@ -717,7 +718,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
               onPressed: _playAudio,
               icon: Icon(
                 isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
-                color: Colors.deepPurpleAccent,
+                color: Color(0xFF2C2C54),
                 size: 40.0,
               ),
             ),
@@ -727,9 +728,9 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 children: [
                   SliderTheme(
                     data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: Colors.deepPurpleAccent,
+                      activeTrackColor: Color(0xFF2C2C54),
                       inactiveTrackColor: Colors.grey.shade300,
-                      thumbColor: Colors.deepPurpleAccent,
+                      thumbColor: Color(0xFF2C2C54),
                       overlayColor: Colors.deepPurple.withOpacity(0.2),
                       trackHeight: 4.0,
                     ),
@@ -747,8 +748,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(_formatTime(_position)),
-                        Text(_formatTime(_duration)),
+                        Text(_formatTime(_position), style: TextStyle(color: Color(0xFF2C2C54))),
+                        Text(_formatTime(_duration), style: TextStyle(color: Color(0xFF2C2C54))),
                       ],
                     ),
                   ),

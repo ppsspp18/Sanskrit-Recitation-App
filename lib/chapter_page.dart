@@ -88,6 +88,7 @@ class _ChapterPageState extends State<ChapterPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      color: const Color(0xFFFFE0B2),
       child: InkWell(
         onTap: () {
           Navigator.push(

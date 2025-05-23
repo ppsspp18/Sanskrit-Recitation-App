@@ -55,9 +55,9 @@ class _HomePageState extends State<HomePage> {
         child: GridView.builder(
           itemCount: chapterIds.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, // More columns
-            crossAxisSpacing: 12, // More space between columns
-            mainAxisSpacing: 12, // More space between rows
+            crossAxisCount: 2, // More rows
+            crossAxisSpacing: 1, // More space between
+            mainAxisSpacing: 1, // More space between rows
             childAspectRatio: 0.95,
           ),
           itemBuilder: (context, index) {
@@ -85,10 +85,9 @@ class _HomePageState extends State<HomePage> {
             ];
             final chapterTitle = chapterTitles.length > index ? chapterTitles[index] : "Chapter $chapterId";
             return Card(
-              
-              elevation: 6,
+
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              color: Colors.orangeAccent[50],
+              color: const Color(0xFFFFE0B2),
               child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
@@ -114,8 +113,8 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Row(
+                const SizedBox(height: 5),
+                Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                   ElevatedButton.icon(
@@ -136,6 +135,7 @@ class _HomePageState extends State<HomePage> {
                     );
                     },
                   ),
+                  const SizedBox(height: 5),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF2C2C54),
