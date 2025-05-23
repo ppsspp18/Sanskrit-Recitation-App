@@ -1,3 +1,35 @@
+class AudioSegment {
+  final int start;
+  final int end;
+  final String label;
+  final String tag;
+
+  AudioSegment({
+    required this.start,
+    required this.end,
+    required this.label,
+    required this.tag,
+  });
+
+  factory AudioSegment.fromJson(Map<String, dynamic> json) {
+    return AudioSegment(
+      start: json['start'] ?? 0,
+      end: json['end'] ?? 0,
+      label: json['label'] ?? '',
+      tag: json['tag'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'start': start,
+      'end': end,
+      'label': label,
+      'tag': tag,
+    };
+  }
+}
+
 class Synonym {
   final String versetext;
   final String meaning;
@@ -20,8 +52,9 @@ class Verse_1 {
   final Map<String, Synonym> synonyms;
   final String translation;
   final String purport;
-  final List<String> audioPaths; // New field for audio paths
-  final String verseId; // Unique ID for the verse (chapter-shloka)
+  final String? audioPath; // Changed to a single path with nullable type
+  final List<AudioSegment>? segments; // Added segments with nullable type
+  final String verseId;
 
   Verse_1({
     required this.chapter,
@@ -31,7 +64,8 @@ class Verse_1 {
     required this.synonyms,
     required this.translation,
     required this.purport,
-    this.audioPaths = const [], // Default empty list for audio paths
+    this.audioPath, // Now nullable
+    this.segments, // New field for segments
     String? verseId,
   }) : verseId = verseId ?? "${chapter.padLeft(2, '0')}-${shloka.padLeft(2, '0')}";
 
@@ -43,6 +77,14 @@ class Verse_1 {
       });
     }
 
+    // Handle segments if available
+    List<AudioSegment>? segmentsList;
+    if (json['segments'] != null) {
+      segmentsList = (json['segments'] as List)
+          .map((segment) => AudioSegment.fromJson(segment))
+          .toList();
+    }
+
     return Verse_1(
       chapter: json['chapter'] ?? '',
       shloka: json['shloka'] ?? '',
@@ -51,7 +93,8 @@ class Verse_1 {
       synonyms: syns,
       translation: json['translation'] ?? '',
       purport: json['purport'] ?? '',
-      audioPaths: json['audioPaths']?.cast<String>() ?? [],
+      audioPath: json['audioPath'],
+      segments: segmentsList,
       verseId: json['verseId'],
     );
   }
@@ -68,7 +111,8 @@ class Verse_1 {
       })),
       'translation': translation,
       'purport': purport,
-      'audioPaths': audioPaths,
+      'audioPath': audioPath,
+      'segments': segments?.map((segment) => segment.toJson()).toList(),
       'verseId': verseId,
     };
   }

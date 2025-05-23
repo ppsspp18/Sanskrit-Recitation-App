@@ -1,3 +1,6 @@
 {
-    "cmake.sourceDirectory": "/home/manideepdonkena/Documents/App_Dev/Intro/sanskrit_racitation_project/linux"
+    "cmake.sourceDirectory": "/home/manideepdonkena/Documents/App_Dev/Intro/sanskrit_racitation_project/linux",
+    "githubPullRequests.ignoredPullRequestBranches": [
+        "main"
+    ]
 }

@@ -4,7 +4,13 @@ import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
 
 class GitaVersePage extends StatefulWidget {
   final Verse_1 verse;
-  const GitaVersePage({super.key, required this.verse});
+  final void Function(bool)? onNavigate; // Callback for navigation
+  
+  const GitaVersePage({
+    super.key, 
+    required this.verse, 
+    this.onNavigate,
+  });
 
   @override
   State<GitaVersePage> createState() => _GitaVersePageState();
@@ -15,8 +21,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
   bool isPlaying = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
-  late String _selectedAudio;
-  late Map<String, String> _audioFiles;
+  String? _errorMessage;
+  bool _isLoading = false;
   
   // For tooltip display
   bool _tooltipVisible = false;
@@ -24,64 +30,208 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Offset _tooltipPosition = Offset.zero;
   bool _tooltipLocked = false;
   
+  // For custom meanings
+  Map<String, String> _customMeanings = {};
+  String? _currentSelectedSegment;
+  final TextEditingController _meaningController = TextEditingController();
+  
+  // For view modes
+  bool _isAdvancedView = false;
+  
   // For content visibility
-  bool _showSanskrit = true;
-  bool _showEnglish = true;
-  bool _showWordMeanings = false;
+  bool _showDevanagari = true;
+  bool _showTransliteration = true;
+  bool _showSynonyms = false; // Changed to true by default
   bool _showTranslation = true;
   bool _showPurport = false;
-
-  // For view selection
-  final List<String> _viewOptions = [
-    'All',
-    'Sanskrit',
-    'English',
-    'Word Meanings',
-    'Translation',
-    'Purport',
-  ];
-  String _selectedView = 'All';
 
   @override
   void initState() {
     super.initState();
     
-    // Set up audio files
-    if (widget.verse.audioPaths.isNotEmpty) {
-      _audioFiles = {
-        for (int i = 0; i < widget.verse.audioPaths.length; i++)
-          'Audio ${i + 1}': widget.verse.audioPaths[i],
-      };
-
-      _selectedAudio = _audioFiles.keys.first;
-      _audioPlayer.setSource(AssetSource(_audioFiles[_selectedAudio]!));
-
-      _audioPlayer.onDurationChanged.listen((d) => setState(() => _duration = d));
-      _audioPlayer.onPositionChanged.listen((p) => setState(() => _position = p));
-      _audioPlayer.onPlayerComplete.listen((_) => setState(() {
-        isPlaying = false;
-        _position = Duration.zero;
-      }));
-    } else {
-      _audioFiles = {};
+    // Set up audio player if audio path is available
+    if (widget.verse.audioPath != null) {
+      _setupAudioPlayer();
     }
   }
 
-  void _setAudioSource() {
-    if (_audioFiles.isNotEmpty && _audioFiles[_selectedAudio] != null) {
-      _audioPlayer.setSource(AssetSource(_audioFiles[_selectedAudio]!));
+  void _setupAudioPlayer() {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+      
+      // Log the audio path for debugging
+      final audioPath = widget.verse.audioPath!;
+      debugPrint('Audio path from verse: $audioPath');
+      
+      // Set up player event listeners
+      _audioPlayer.onDurationChanged.listen((d) {
+        setState(() => _duration = d);
+        debugPrint('Duration set: ${d.inSeconds} seconds');
+      });
+      
+      _audioPlayer.onPositionChanged.listen((p) => 
+        setState(() => _position = p)
+      );
+      
+      _audioPlayer.onPlayerComplete.listen((_) => 
+        setState(() {
+          isPlaying = false;
+          _position = Duration.zero;
+        })
+      );
+      
+      // Load audio source
+      _loadAudioSource();
+      
+    } catch (e) {
+      debugPrint('Error initializing audio player: $e');
+      setState(() {
+        _errorMessage = 'Error initializing audio player: $e';
+        _isLoading = false;
+      });
+    }
+  }
+  
+  Future<void> _loadAudioSource() async {
+    if (widget.verse.audioPath == null) return;
+    
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+      
+      final audioPath = widget.verse.audioPath!;
+      debugPrint('Loading audio from asset: $audioPath');
+      
+      // Try different approaches to load the audio file
+      bool success = false;
+      Exception? lastError;
+      
+      // Approach 1: Try using AssetSource with original path
+      try {
+        final source = AssetSource(audioPath);
+        await _audioPlayer.setSource(source);
+        success = true;
+        debugPrint('Successfully loaded audio using AssetSource with original path');
+      } catch (e) {
+        lastError = e as Exception;
+        debugPrint('Error with approach 1: $e');
+      }
+      
+      // Approach 2: If file has spaces, try the 'assets/' prefix path
+      if (!success && audioPath.contains(' ')) {
+        try {
+          debugPrint('Trying with assets/ prefix...');
+          final alternateAudioPath = 'assets/$audioPath';
+          debugPrint('Alternate path: $alternateAudioPath');
+          
+          await _audioPlayer.setSourceUrl(alternateAudioPath);
+          success = true;
+          debugPrint('Successfully loaded audio using assets/ prefix path');
+        } catch (e) {
+          lastError = e as Exception;
+          debugPrint('Error with approach 2: $e');
+        }
+      }
+      
+      // Approach 3: Try with a URL-encoded path
+      if (!success && audioPath.contains(' ')) {
+        try {
+          debugPrint('Trying with URL encoded path...');
+          final encodedPath = Uri.encodeFull('assets/$audioPath');
+          debugPrint('Encoded path: $encodedPath');
+          
+          await _audioPlayer.setSourceUrl(encodedPath);
+          success = true;
+          debugPrint('Successfully loaded audio using URL-encoded path');
+        } catch (e) {
+          lastError = e as Exception;
+          debugPrint('Error with approach 3: $e');
+        }
+      }
+      
+      // Approach 4: Try with a file:// prefix for local assets
+      if (!success) {
+        try {
+          debugPrint('Trying with file:// prefix...');
+          final filePrefix = 'file:///android_asset/flutter_assets/$audioPath';
+          debugPrint('File path: $filePrefix');
+          
+          await _audioPlayer.setSourceUrl(filePrefix);
+          success = true;
+          debugPrint('Successfully loaded audio using file:// prefix');
+        } catch (e) {
+          lastError = e as Exception;
+          debugPrint('Error with approach 4: $e');
+        }
+      }
+      
+      if (success) {
+        debugPrint('Audio source set successfully');
+        setState(() {
+          _isLoading = false;
+          _errorMessage = null;
+        });
+      } else {
+        debugPrint('All approaches failed');
+        setState(() {
+          _errorMessage = 'Could not load audio file. Please try again later.';
+          _isLoading = false;
+        });
+        
+        // Log additional details for debugging
+        debugPrint('Audio loading failed for path: $audioPath');
+        debugPrint('Last error: $lastError');
+      }
+    } catch (e) {
+      debugPrint('Exception in _loadAudioSource: $e');
+      setState(() {
+        _errorMessage = 'Could not load audio file: $e';
+        _isLoading = false;
+      });
     }
   }
 
   void _playAudio() async {
-    if (_audioFiles.isEmpty) return;
+    if (widget.verse.audioPath == null) return;
     
-    if (isPlaying) {
-      await _audioPlayer.pause();
-    } else {
-      await _audioPlayer.resume();
+    try {
+      if (isPlaying) {
+        await _audioPlayer.pause();
+        setState(() => isPlaying = false);
+      } else {
+        setState(() => _isLoading = true);
+        
+        // Check if we need to reload the source
+        if (_duration == Duration.zero || _errorMessage != null) {
+          _errorMessage = null;
+          await _loadAudioSource();
+        }
+        
+        await _audioPlayer.resume();
+        setState(() {
+          isPlaying = true;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error playing audio: $e');
+      setState(() {
+        _errorMessage = 'Error playing audio: $e';
+        _isLoading = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error playing audio: ${e.toString()}'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
-    setState(() => isPlaying = !isPlaying);
   }
 
   String _formatTime(Duration duration) {
@@ -92,6 +242,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
   @override
   void dispose() {
     _audioPlayer.dispose();
+    _meaningController.dispose();
     super.dispose();
   }
 
@@ -117,44 +268,54 @@ class _GitaVersePageState extends State<GitaVersePage> {
     });
   }
 
-  // Update visibility based on selected view
-  void _updateVisibility(String view) {
+  // Toggle advanced view mode
+  void _toggleAdvancedView() {
     setState(() {
-      _selectedView = view;
-      
-      // First hide all sections
-      _showSanskrit = false;
-      _showEnglish = false;
-      _showWordMeanings = false;
-      _showTranslation = false;
-      _showPurport = false;
-      
-      // Then show only the selected sections
-      switch (view) {
-        case 'All':
-          _showSanskrit = true;
-          _showEnglish = true;
-          _showTranslation = true;
-          break;
-        case 'Sanskrit':
-          _showSanskrit = true;
-          break;
-        case 'English':
-          _showEnglish = true;
-          break;
-        case 'Word Meanings':
-          _showWordMeanings = true;
-          break;
-        case 'Translation':
-          _showTranslation = true;
-          break;
-        case 'Purport':
-          _showPurport = true;
-          break;
-      }
+      _isAdvancedView = !_isAdvancedView;
     });
   }
 
+  // Navigate to previous verse
+  void _navigateToPreviousVerse() {
+    if (widget.onNavigate != null) {
+      // Direct navigation without alert
+      widget.onNavigate!(false);
+    } else {
+      // Fallback if no navigation callback provided
+      Navigator.pop(context);
+    }
+  }
+
+  // Navigate to next verse
+  void _navigateToNextVerse() {
+    if (widget.onNavigate != null) {
+      // Direct navigation without alert
+      widget.onNavigate!(true);
+    } else {
+      // Fallback if no navigation callback provided
+      Navigator.pop(context);
+    }
+  }
+
+  // Check if this is the first verse in the chapter
+  bool _isFirstVerse() {
+    return widget.verse.shloka == 1;
+  }
+
+  // Check if this is the last verse in the chapter
+  bool _isLastVerse() {
+    // This is a simplified implementation. In a real app, you would check against the actual number of verses in each chapter.
+    // Placeholder logic - replace with actual chapter verse counts
+    Map<int, int> chapterVerseCount = {
+      1: 47, 2: 72, 3: 43, 4: 42, 5: 29, 6: 47,
+      7: 30, 8: 28, 9: 34, 10: 42, 11: 55, 12: 20,
+      13: 35, 14: 27, 15: 20, 16: 24, 17: 28, 18: 78
+    };
+    
+    int? totalVerses = chapterVerseCount[widget.verse.chapter];
+    return totalVerses != null && widget.verse.shloka == totalVerses;
+  }
+  
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -166,6 +327,20 @@ class _GitaVersePageState extends State<GitaVersePage> {
           });
         }
       },
+      // Add horizontal swipe gesture for navigation
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity! > 0) {
+          // Swipe right - go to previous verse
+          if (!_isFirstVerse()) {
+            _navigateToPreviousVerse();
+          }
+        } else if (details.primaryVelocity! < 0) {
+          // Swipe left - go to next verse
+          if (!_isLastVerse()) {
+            _navigateToNextVerse();
+          }
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           title: Text(
@@ -174,32 +349,28 @@ class _GitaVersePageState extends State<GitaVersePage> {
           ),
           backgroundColor: Colors.deepPurpleAccent,
           iconTheme: const IconThemeData(color: Colors.white),
+          actions: [
+            // Advanced view toggle in AppBar
+            TextButton.icon(
+              onPressed: _toggleAdvancedView,
+              icon: Icon(
+                _isAdvancedView ? Icons.tune : Icons.view_agenda,
+                color: Colors.white,
+              ),
+              label: Text(
+                _isAdvancedView ? 'Advanced View' : 'Default View',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
         ),
         body: Stack(
           children: [
             Column(
               children: [
-                // View selection row
-                Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    children: _viewOptions.map((view) => 
-                      _buildViewOption(view),
-                    ).toList(),
-                  ),
-                ),
+                // Advanced view controls - only show when in advanced mode
+                if (_isAdvancedView)
+                  _buildAdvancedViewControls(),
                 
                 // Main content - all in a single scrollable column
                 Expanded(
@@ -208,9 +379,6 @@ class _GitaVersePageState extends State<GitaVersePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Breadcrumb navigation
-                        _buildBreadcrumb(),
-                        
                         // Main verse card
                         Card(
                           elevation: 2,
@@ -254,56 +422,54 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                 ),
                               ),
                               
-                              // Card body - dynamic content based on selected view
+                              // Card body - dynamic content based on visibility settings
                               Padding(
                                 padding: const EdgeInsets.all(16.0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     // Sanskrit (Devanagari) section
-                                    if (_showSanskrit && widget.verse.sanskrit.isNotEmpty) 
+                                    if (_showDevanagari && widget.verse.sanskrit.isNotEmpty) 
                                       _buildVerseSection(
-                                        'Sanskrit (Devanagari)', 
+                                        'Devanagari',
                                         widget.verse.sanskrit,
                                         false, // Not interactive
-                                        _selectedView == 'Sanskrit', // Larger text for Sanskrit-only view
                                       ),
                                     
-                                    if (_showSanskrit && _showEnglish)
+                                    if (_showDevanagari && _showTransliteration)
                                       const SizedBox(height: 24.0),
                                     
                                     // Transliteration section with interactive words
-                                    if (_showEnglish && widget.verse.english.isNotEmpty) 
+                                    if (_showTransliteration && widget.verse.english.isNotEmpty) 
                                       _buildVerseSection(
-                                        'Transliteration (IAST)', 
+                                        'Verse Text (Transliteration)',
                                         widget.verse.english,
                                         true, // Interactive for hover tooltips
-                                        _selectedView == 'English', // Larger text for English-only view
                                       ),
                                     
-                                    if (_showWordMeanings || _showTranslation || _showPurport)
-                                      const SizedBox(height: 16.0),
+                                    if (_showSynonyms)
+                                      const SizedBox(height: 24.0),
                                     
                                     // Word Meanings section
-                                    if (_showWordMeanings)
+                                    if (_showSynonyms && widget.verse.synonyms.isNotEmpty)
                                       _buildExpandedSection(
-                                        'Word-by-Word Translation',
-                                        _buildWordMeanings(_selectedView == 'Word Meanings'),
+                                        'Synonyms',
+                                        _buildWordMeanings(),
                                       ),
                                     
-                                    if (_showWordMeanings && (_showTranslation || _showPurport))
-                                      const SizedBox(height: 16.0),
+                                    if (_showTranslation)
+                                      const SizedBox(height: 24.0),
                                     
                                     // Translation section
-                                    if (_showTranslation)
+                                    if (_showTranslation && widget.verse.translation.isNotEmpty)
                                       _buildExpandedSection(
                                         'Translation',
                                         Padding(
                                           padding: const EdgeInsets.all(16.0),
                                           child: Text(
                                             widget.verse.translation,
-                                            style: TextStyle(
-                                              fontSize: _selectedView == 'Translation' ? 18 : 16, 
+                                            style: const TextStyle(
+                                              fontSize: 16, 
                                               height: 1.6
                                             ),
                                             textAlign: TextAlign.justify,
@@ -311,11 +477,11 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                         ),
                                       ),
                                     
-                                    if (_showTranslation && _showPurport)
-                                      const SizedBox(height: 16.0),
+                                    if (_showPurport)
+                                      const SizedBox(height: 24.0),
                                     
                                     // Purport section
-                                    if (_showPurport)
+                                    if (_showPurport && widget.verse.purport.isNotEmpty)
                                       _buildExpandedSection(
                                         'Purport',
                                         Padding(
@@ -332,23 +498,27 @@ class _GitaVersePageState extends State<GitaVersePage> {
                               ),
                               
                               // Audio player section
-                              if (widget.verse.audioPaths.isNotEmpty)
-                                Container(
-                                  padding: const EdgeInsets.all(16.0),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFF8F9FA),
-                                    border: Border(
-                                      top: BorderSide(
-                                        color: Color(0xFFE9ECEF),
-                                        width: 1.0,
-                                      ),
+                              Container(
+                                padding: const EdgeInsets.all(16.0),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF8F9FA),
+                                  border: Border(
+                                    top: BorderSide(
+                                      color: Color(0xFFE9ECEF),
+                                      width: 1.0,
                                     ),
                                   ),
-                                  child: _buildAudioPlayerControls(),
                                 ),
+                                child: widget.verse.audioPath != null
+                                  ? _buildAudioPlayerControls()
+                                  : _buildAudioComingSoon(),
+                              ),
                             ],
                           ),
                         ),
+                        
+                        // Navigation buttons
+                        _buildNavigationButtons(),
                       ],
                     ),
                   ),
@@ -396,88 +566,73 @@ class _GitaVersePageState extends State<GitaVersePage> {
     );
   }
   
-  Widget _buildViewOption(String view) {
-    final isSelected = _selectedView == view;
-    
-    return GestureDetector(
-      onTap: () {
-        _updateVisibility(view);
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.deepPurpleAccent : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(20.0),
-          border: Border.all(
-            color: isSelected ? Colors.deepPurpleAccent : Colors.grey.shade300,
-            width: 1.0,
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          view,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade800,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14.0,
-          ),
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildBreadcrumb() {
+  // Build the advanced view controls with toggle switches
+  Widget _buildAdvancedViewControls() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Wrap(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          const Text(
+            'Show/Hide Sections',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
-            child: const Text('Scriptures'),
           ),
-          const Text(' / ', style: TextStyle(color: Colors.grey)),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: const Text('Bhagavad Gita'),
-          ),
-          const Text(' / ', style: TextStyle(color: Colors.grey)),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text('Chapter ${widget.verse.chapter}'),
-          ),
-          const Text(' / ', style: TextStyle(color: Colors.grey)),
-          Text(
-            'Verse ${widget.verse.shloka}',
-            style: const TextStyle(color: Colors.grey),
+          const SizedBox(height: 12.0),
+          Wrap(
+            spacing: 16.0,
+            runSpacing: 8.0,
+            children: [
+              _buildToggleSwitch('Devanagari', _showDevanagari, (value) {
+                setState(() => _showDevanagari = value);
+              }),
+              _buildToggleSwitch('Verse Text', _showTransliteration, (value) {
+                setState(() => _showTransliteration = value);
+              }),
+              _buildToggleSwitch('Synonyms', _showSynonyms, (value) {
+                setState(() => _showSynonyms = value);
+              }),
+              _buildToggleSwitch('Translation', _showTranslation, (value) {
+                setState(() => _showTranslation = value);
+              }),
+              _buildToggleSwitch('Purport', _showPurport, (value) {
+                setState(() => _showPurport = value);
+              }),
+            ],
           ),
         ],
       ),
     );
   }
+  
+  // Build a toggle switch with label
+  Widget _buildToggleSwitch(String label, bool value, Function(bool) onChanged) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: Colors.deepPurpleAccent,
+        ),
+        Text(label),
+      ],
+    );
+  }
 
-  Widget _buildVerseSection(String title, String content, bool interactive, bool isFullView) {
+  Widget _buildVerseSection(String title, String content, bool interactive) {
     final lines = content.split('\n');
     
     return Column(
@@ -485,12 +640,11 @@ class _GitaVersePageState extends State<GitaVersePage> {
       children: [
         Text(
           title,
-          style: TextStyle(
-            fontSize: isFullView ? 22 : 16,
+          style: const TextStyle(
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: Colors.deepPurpleAccent,
           ),
-          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12.0),
         Container(
@@ -504,14 +658,14 @@ class _GitaVersePageState extends State<GitaVersePage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: lines.map((line) {
               if (interactive) {
-                return _buildInteractiveLine(line, isFullView);
+                return _buildInteractiveLine(line);
               } else {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Text(
                     line,
-                    style: TextStyle(
-                      fontSize: isFullView ? 24 : 18, 
+                    style: const TextStyle(
+                      fontSize: 18, 
                       height: 1.5
                     ),
                     textAlign: TextAlign.center,
@@ -525,64 +679,120 @@ class _GitaVersePageState extends State<GitaVersePage> {
     );
   }
 
-  Widget _buildInteractiveLine(String line, bool isFullView) {
+  Widget _buildInteractiveLine(String line) {
     final words = line.split(' ');
     
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 4.0,
-        runSpacing: 4.0,
-        children: words.map((word) {
-          // Find if this word has a synonym in the verse
-          String? meaning;
-          for (var entry in widget.verse.synonyms.entries) {
-            // Simple matching logic - could be improved
-            if (word.toLowerCase().contains(entry.key.toLowerCase()) ||
-                entry.key.toLowerCase().contains(word.toLowerCase())) {
-              meaning = entry.value.meaning;
-              break;
-            }
-          }
-
-          return GestureDetector(
-            onTap: () {
-              if (meaning != null) {
-                _toggleTooltipLock();
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8C8DC), // Pink background color matching the image
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12.0,
+          runSpacing: 24.0, // More space between lines
+          children: words.map((word) {
+            // Check if this word has a synonym in the verse data
+            String? meaning;
+            for (var entry in widget.verse.synonyms.entries) {
+              if (word.toLowerCase().contains(entry.key.toLowerCase()) ||
+                  entry.key.toLowerCase().contains(word.toLowerCase())) {
+                meaning = entry.value.meaning;
+                break;
               }
-            },
-            child: MouseRegion(
-              cursor: meaning != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
-              onHover: (event) {
-                if (meaning != null) {
-                  final RenderBox box = context.findRenderObject() as RenderBox;
-                  final Offset position = box.localToGlobal(event.position);
-                  _showTooltip('$word: $meaning', Offset(position.dx, position.dy + 20));
-                }
-              },
-              onExit: (_) {
-                _hideTooltip();
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 2.0),
-                decoration: BoxDecoration(
-                  border: meaning != null 
-                    ? const Border(bottom: BorderSide(color: Colors.deepPurpleAccent, width: 1.0))
-                    : null,
-                ),
-                child: Text(
+            }
+            
+            // Check if there's a custom meaning added by user
+            if (_customMeanings.containsKey(word)) {
+              meaning = _customMeanings[word];
+            }
+            
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Sanskrit word text in larger font
+                Text(
                   word,
-                  style: TextStyle(
-                    fontSize: isFullView ? 22 : 18,
-                    color: meaning != null ? Colors.deepPurpleAccent : Colors.black87,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ),
-            ),
-          );
-        }).toList(),
+                const SizedBox(height: 4),
+                // Show meaning below the word in light gray
+                Text(
+                  meaning ?? ' ', // Show space if no meaning
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            );
+          }).toList(),
+        ),
       ),
+    );
+  }
+  
+  // Add a method to show dialog to add a new meaning
+  void _showAddMeaningDialog(String word) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Add meaning for "$word"'),
+          content: TextField(
+            controller: _meaningController,
+            decoration: const InputDecoration(
+              hintText: 'Enter the meaning',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _meaningController.clear();
+              },
+              child: const Text('CANCEL'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurpleAccent,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                if (_meaningController.text.isNotEmpty) {
+                  setState(() {
+                    _customMeanings[word] = _meaningController.text;
+                  });
+                  Navigator.pop(context);
+                  _meaningController.clear();
+                  
+                  // Show a confirmation snackbar
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Meaning added for "$word"'),
+                      backgroundColor: Colors.deepPurpleAccent,
+                    ),
+                  );
+                }
+              },
+              child: const Text('SAVE'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -603,11 +813,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    fontSize: _selectedView == title.split(' ')[0] ? 22 : 16,
+                  style: const TextStyle(
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: _selectedView == title.split(' ')[0] ? 
-                      Colors.deepPurpleAccent.shade400 : Colors.black87,
+                    color: Colors.deepPurpleAccent,
                   ),
                 ),
               ],
@@ -620,7 +829,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     );
   }
 
-  Widget _buildWordMeanings([bool isFullView = false]) {
+  Widget _buildWordMeanings() {
     if (widget.verse.synonyms.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16.0),
@@ -629,7 +838,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     }
 
     return Padding(
-      padding: EdgeInsets.all(isFullView ? 0.0 : 16.0),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: widget.verse.synonyms.entries.map((entry) {
@@ -637,18 +846,18 @@ class _GitaVersePageState extends State<GitaVersePage> {
             margin: const EdgeInsets.only(bottom: 16.0),
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(
-              color: isFullView ? Colors.grey.shade50 : null,
-              borderRadius: isFullView ? BorderRadius.circular(8.0) : null,
-              border: isFullView ? Border.all(color: Colors.grey.shade200) : null,
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(color: Colors.grey.shade200),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   entry.key,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: isFullView ? 18 : 16,
+                    fontSize: 16,
                     color: Colors.deepPurpleAccent,
                   ),
                 ),
@@ -656,19 +865,19 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       "Word: ",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: isFullView ? 16 : 14,
-                        color: Colors.grey.shade800,
+                        fontSize: 14,
+                        color: Colors.black87,
                       ),
                     ),
                     Expanded(
                       child: Text(
                         entry.value.versetext,
-                        style: TextStyle(
-                          fontSize: isFullView ? 16 : 14,
+                        style: const TextStyle(
+                          fontSize: 14,
                         ),
                       ),
                     ),
@@ -678,19 +887,19 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       "Meaning: ",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: isFullView ? 16 : 14,
-                        color: Colors.grey.shade800,
+                        fontSize: 14,
+                        color: Colors.black87,
                       ),
                     ),
                     Expanded(
                       child: Text(
                         entry.value.meaning,
-                        style: TextStyle(
-                          fontSize: isFullView ? 16 : 14,
+                        style: const TextStyle(
+                          fontSize: 14,
                         ),
                       ),
                     ),
@@ -700,6 +909,48 @@ class _GitaVersePageState extends State<GitaVersePage> {
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+  
+  // Build navigation buttons
+  Widget _buildNavigationButtons() {
+    bool isFirst = _isFirstVerse();
+    bool isLast = _isLastVerse();
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Previous verse button - left side
+          if (!isFirst)
+            ElevatedButton.icon(
+              onPressed: _navigateToPreviousVerse,
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('Previous Verse'),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white, 
+                backgroundColor: Colors.deepPurpleAccent,
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              ),
+            ),
+          // Spacer when only one button is shown
+          if (isFirst && !isLast || !isFirst && isLast)
+            const Spacer(),
+          // Next verse button - right side
+          if (!isLast)
+            ElevatedButton.icon(
+              onPressed: _navigateToNextVerse,
+              icon: const Icon(Icons.arrow_forward),
+              label: const Text('Next Verse'),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white, 
+                backgroundColor: Colors.deepPurpleAccent,
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -716,46 +967,51 @@ class _GitaVersePageState extends State<GitaVersePage> {
           ),
         ),
         const SizedBox(height: 16.0),
-        
-        // Audio player controls
         Row(
           children: [
             IconButton(
-              onPressed: _playAudio,
-              icon: Icon(
-                isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
-                color: Colors.deepPurpleAccent,
-                size: 40.0,
-              ),
+              onPressed: _isLoading ? null : _playAudio,
+              icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled),
+              iconSize: 48.0,
+              color: Colors.deepPurpleAccent,
+              disabledColor: Colors.grey,
             ),
             const SizedBox(width: 8.0),
             Expanded(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: Colors.deepPurpleAccent,
-                      inactiveTrackColor: Colors.grey.shade300,
-                      thumbColor: Colors.deepPurpleAccent,
-                      overlayColor: Colors.deepPurple.withOpacity(0.2),
-                      trackHeight: 4.0,
-                    ),
-                    child: Slider(
-                      min: 0,
-                      max: _duration.inSeconds.toDouble(),
-                      value: _position.inSeconds.toDouble(),
-                      onChanged: (value) async {
-                        await _audioPlayer.seek(Duration(seconds: value.toInt()));
-                      },
-                    ),
+                  Slider(
+                    value: _position.inSeconds.toDouble(),
+                    max: _duration.inSeconds.toDouble(),
+                    min: 0,
+                    activeColor: Colors.deepPurpleAccent,
+                    inactiveColor: Colors.grey.shade300,
+                    onChanged: _isLoading || _errorMessage != null
+                      ? null
+                      : (value) async {
+                          await _audioPlayer.seek(Duration(seconds: value.toInt()));
+                        },
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(_formatTime(_position)),
-                        Text(_formatTime(_duration)),
+                        Text(
+                          _formatTime(_position),
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12.0,
+                          ),
+                        ),
+                        Text(
+                          _formatTime(_duration),
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12.0,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -764,28 +1020,51 @@ class _GitaVersePageState extends State<GitaVersePage> {
             ),
           ],
         ),
-        
-        if (_audioFiles.length > 1) ...[
-          const SizedBox(height: 16.0),
-          DropdownButton<String>(
-            value: _selectedAudio,
-            isExpanded: true,
-            onChanged: (newValue) {
-              if (newValue != null) {
-                setState(() {
-                  _selectedAudio = newValue;
-                  _setAudioSource();
-                });
-              }
-            },
-            items: _audioFiles.keys.map((audio) {
-              return DropdownMenuItem<String>(
-                value: audio,
-                child: Text(audio),
-              );
-            }).toList(),
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Loading audio...',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14.0,
+              ),
+            ),
           ),
-        ],
+        if (_errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              _errorMessage!,
+              style: const TextStyle(
+                color: Colors.red,
+                fontSize: 14.0,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+  
+  Widget _buildAudioComingSoon() {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Audio Recitation',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 16.0),
+        Text(
+          'Audio recitation coming soon for this verse.',
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 14.0,
+          ),
+        ),
       ],
     );
   }

@@ -110,11 +110,11 @@ class _ChapterPageState extends State<ChapterPage> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 150, 141, 173),
+                      color: Colors.deepPurpleAccent,
                     ),
                   ),
                   // Audio indicator if verse has audio
-                  if (verse.audioPaths.isNotEmpty)
+                  if (verse.audioPath != null)
                     const Icon(Icons.audiotrack, color: Colors.deepPurpleAccent),
                 ],
               ),
@@ -136,6 +136,28 @@ class _ChapterPageState extends State<ChapterPage> {
                   color: Colors.grey,
                 ),
               ),
+              // Add segment indicator if available
+              if (verse.segments != null && verse.segments!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.segment, 
+                        size: 16, 
+                        color: Colors.deepPurpleAccent,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${verse.segments!.length} segments available',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),

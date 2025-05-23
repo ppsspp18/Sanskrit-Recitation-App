@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class GitaVersePage extends StatefulWidget {
+  const GitaVersePage({super.key});
+
   @override
   _GitaVersePageState createState() => _GitaVersePageState();
 }
