@@ -310,7 +310,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                     // Word Meanings section
                                     if (_showWordMeanings)
                                       _buildExpandedSection(
-                                        'Word-by-Word Translation',
+                                        'Word-by-Word Meanings',
                                         _buildWordMeanings(_selectedView == 'Word Meanings'),
                                       ),
                                     
@@ -620,7 +620,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: _selectedView == title.split(' ')[0] ? 22 : 16,
+                    fontSize: _selectedView == title.split(' ')[0] ? 12 : 12,
                     fontWeight: FontWeight.bold,
                     color: _selectedView == title.split(' ')[0] ? 
                       Color(0xFF2C2C54) : Colors.black87,
