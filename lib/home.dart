@@ -3,7 +3,7 @@ import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart
 // import 'package:sanskrit_racitatiion_project/verse_page/chapterPage.dart';
 import 'package:sanskrit_racitatiion_project/chapter_page.dart';
 import 'package:sanskrit_racitatiion_project/search.dart';
-import 'package:sanskrit_racitatiion_project/book_mark.dart';
+import 'package:sanskrit_racitatiion_project/bookmark_screen/book_mark.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

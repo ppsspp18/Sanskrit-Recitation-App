@@ -1,7 +1,7 @@
 // this pages shown only the chapter which are bookmarked
 
 import 'package:flutter/material.dart';
-import 'package:sanskrit_racitatiion_project/book_mark_chapter_page.dart';
+import 'package:sanskrit_racitatiion_project/bookmark_screen/book_mark_chapter_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 

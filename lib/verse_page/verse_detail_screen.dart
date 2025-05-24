@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
-import 'package:sanskrit_racitatiion_project/verse_page/verse_page_screen_bookmark_manager.dart';
+import 'package:sanskrit_racitatiion_project/bookmark_screen/verse_page_screen_bookmark_manager.dart';
 
 
 class GitaVersePage extends StatefulWidget {
