@@ -1,5 +1,7 @@
+// this pages shown only the chapter which are bookmarked
+
 import 'package:flutter/material.dart';
-import 'package:sanskrit_racitatiion_project/chapter_page.dart';
+import 'package:sanskrit_racitatiion_project/book_mark_chapter_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
@@ -11,7 +13,31 @@ class BookmarkScreen extends StatefulWidget {
 }
 
 class _BookmarkScreenState extends State<BookmarkScreen> {
-  final List<String> chapterIds = List.generate(18, (index) => (index + 1).toString());
+  List<String> chapterIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBookmarkedChapters();
+  }
+
+  Future<void> _loadBookmarkedChapters() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bookmarkedVerses = prefs.getStringList('bookmarkedVerses') ?? [];
+
+    // Extract chapter numbers from strings like "2:20"
+    final bookmarkedChapters = bookmarkedVerses
+        .map((entry) => entry.split(':').first)
+        .toSet()
+        .toList();
+
+    // Optional: sort numerically
+    bookmarkedChapters.sort((a, b) => int.parse(a).compareTo(int.parse(b)));
+
+    setState(() {
+      chapterIds = bookmarkedChapters;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +147,7 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => ChapterPage(chapterId: chapterId)),
+                              MaterialPageRoute(builder: (context) => BookmarkChapterPage(chapterId: chapterId)),
                             );
                           },
                         ),
