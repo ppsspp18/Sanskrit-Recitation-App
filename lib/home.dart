@@ -3,6 +3,8 @@ import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart
 // import 'package:sanskrit_racitatiion_project/verse_page/chapterPage.dart';
 import 'package:sanskrit_racitatiion_project/chapter_page.dart';
 import 'package:sanskrit_racitatiion_project/search.dart';
+import 'package:sanskrit_racitatiion_project/book_mark.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -25,7 +27,7 @@ class _HomePageState extends State<HomePage> {
           'BHAGAVAD GITA',
           style: TextStyle(
         fontWeight: FontWeight.bold,
-        fontSize: 20,
+        fontSize: 14,
         letterSpacing: 2,
         color: Color(0xFFFF9933),
           ),
@@ -49,6 +51,15 @@ class _HomePageState extends State<HomePage> {
             },
             icon: const Icon(Icons.search, color: Color(0xFFFF9933)), // Search icon
             tooltip: 'Search',
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) =>  BookmarkScreen()),
+              );
+            },
+            icon: const Icon(Icons.bookmark, color: Color(0xFFFF9933)), // Bookmark icon
           ),
           IconButton(
             onPressed: () {

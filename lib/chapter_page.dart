@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verse_detail_screen.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verse_repository.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
-import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart';
+//import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart';
+//import 'package:sanskrit_racitatiion_project/book_mark.dart';
 
 class ChapterPage extends StatefulWidget {
   final String chapterId;
@@ -46,17 +47,6 @@ class _ChapterPageState extends State<ChapterPage> {
         title: Text('CHAPTER ${widget.chapterId}'),
         backgroundColor: Color(0xFF2C2C54),
         foregroundColor: Color(0xFFFF9933),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-            icon: const Icon(Icons.settings),
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
