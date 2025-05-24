@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
+import 'package:sanskrit_racitatiion_project/verse_page/verse_page_screen_bookmark_manager.dart';
+
 
 class GitaVersePage extends StatefulWidget {
   final Verse_1 verse;
@@ -18,6 +20,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
   late String _selectedAudio;
   late Map<String, String> _audioFiles;
   Set<String> _selectedViews = {};
+  bool isBookmarked = false;
+  String get verseId => '${widget.verse.chapter}:${widget.verse.shloka}';
 
 
   // For tooltip display
@@ -47,6 +51,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
   @override
   void initState() {
     super.initState();
+    _loadBookmarkStatus();
     
     // Set up audio files
     if (widget.verse.audioPaths.isNotEmpty) {
@@ -156,6 +161,25 @@ class _GitaVersePageState extends State<GitaVersePage> {
     });
   }
 
+  void _loadBookmarkStatus() async {
+    bool bookmarked = await BookmarkManager.isBookmarked(verseId);
+    setState(() {
+      isBookmarked = bookmarked;
+    });
+  }
+
+  void _toggleBookmark() async {
+    if (isBookmarked) {
+      await BookmarkManager.removeBookmark(verseId);
+    } else {
+      await BookmarkManager.addBookmark(verseId);
+    }
+
+    setState(() {
+      isBookmarked = !isBookmarked;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -243,15 +267,11 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                       ),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.bookmark_add_outlined),
-                                      color: Color(0xFF2C2C54),
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Bookmark feature coming soon'),
-                                          ),
-                                        );
-                                      },
+                                      icon: Icon(
+                                        isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                                        color: isBookmarked ? Colors.orange : Colors.white,
+                                      ),
+                                      onPressed: _toggleBookmark,
                                     ),
                                   ],
                                 ),
