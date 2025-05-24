@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:sanskrit_racitatiion_project/bookmark_screen/bookmark_manager.dart';
+
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
@@ -13,12 +15,36 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _verses = [];
   List<dynamic> _results = [];
+  Set<String> _bookmarkedVerseIds = {};
 
   @override
   void initState() {
     super.initState();
     _loadJsonData();
+    _loadBookmarks();
   }
+
+  Future<void> _loadBookmarks() async {
+    final ids = await BookmarkManager.getBookmarks();
+    setState(() {
+      _bookmarkedVerseIds = ids.toSet();
+    });
+  }
+
+  void _toggleBookmark(String id) async {
+    if (_bookmarkedVerseIds.contains(id)) {
+      await BookmarkManager.removeBookmark(id);
+      setState(() {
+        _bookmarkedVerseIds.remove(id);
+      });
+    } else {
+      await BookmarkManager.addBookmark(id);
+      setState(() {
+        _bookmarkedVerseIds.add(id);
+      });
+    }
+  }
+
 
   Future<void> _loadJsonData() async {
     final String jsonString = await rootBundle.loadString('assets/gita.json');
@@ -137,8 +163,12 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: _searchController,
+              style: const TextStyle(color: Color(0xFF2C2C54), fontWeight: FontWeight.w500),
               decoration: InputDecoration(
+                filled: true,
+                fillColor: Color(0xFFFF9933).withOpacity(0.1),
                 hintText: 'Search verse, translation, or purport',
+                hintStyle: const TextStyle(color: Color(0xFF2C2C54)),
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -152,8 +182,24 @@ class _SearchScreenState extends State<SearchScreen> {
               itemCount: _results.length,
               itemBuilder: (context, index) {
                 final item = _results[index];
+                final chapter = item['chapter'].toString();
+                final shloka = item['shloka'].toString();
+                final verseId = "$chapter:$shloka";
+                final isBookmarked = _bookmarkedVerseIds.contains(verseId);
                 return ListTile(
-                  title: Text("Chapter ${item['chapter']} - Shloka ${item['shloka']}", style: TextStyle(color: Color(0xFF2C2C54), fontWeight: FontWeight.bold)),
+                  title:
+                  Row(
+                  children: [
+                    Text("Verse ${item['chapter']}.${item['shloka']}", style: TextStyle(color: Color(0xFF2C2C54), fontWeight: FontWeight.bold)),
+                    IconButton(
+                      icon: Icon(
+                        isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                        color: isBookmarked ? Color(0xFF2C2C54) : Color(0xFF2C2C54),
+                      ),
+                      onPressed: () => _toggleBookmark(verseId),
+                    ),
+                   ]
+                  ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
