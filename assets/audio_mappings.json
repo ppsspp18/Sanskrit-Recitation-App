@@ -1,37 +1,30 @@
-{
-  "version": "1.0",
-  "mappings": [
-    {
-      "verseId": "01-01",
-      "audioPaths": ["v1.mp3"]
-    },
-    {
-      "verseId": "01-02",
-      "audioPaths": ["v2.mp3"]
-    },
-    {
-      "verseId": "01-03",
-      "audioPaths": ["v3.mp3"]
-    },
-    {
-      "verseId": "01-04",
-      "audioPaths": ["v4.mp3"]
-    },
-    {
-      "verseId": "02-01",
-      "audioPaths": ["v1.mp3", "v2.mp3"]
-    },
-    {
-      "verseId": "02-02",
-      "audioPaths": ["v2.mp3", "v3.mp3"]
-    },
-    {
-      "verseId": "02-03",
-      "audioPaths": ["v3.mp3", "v4.mp3"]
-    },
-    {
-      "verseId": "02-04",
-      "audioPaths": ["v4.mp3", "v1.mp3"]
-    }
+[{
+  "chapter": "18",
+  "shloka": "66",
+  "segments": [
+      {
+          "start": 799,
+          "end": 6077,
+          "label": "sarva-dharmān parityajya",
+          "tag": "line"
+      },
+      {
+          "start": 6333,
+          "end": 11451,
+          "label": "mām ekaṁ śaraṇaṁ vraja",
+          "tag": "line"
+      },
+      {
+          "start": 11643,
+          "end": 17689,
+          "label": "ahaṁ tvāṁ sarva-pāpebhyo",
+          "tag": "line"
+      },
+      {
+          "start": 17977,
+          "end": 22071,
+          "label": "mokṣayiṣyāmi mā śucaḥ",
+          "tag": "line"
+      }
   ]
-}
+}]

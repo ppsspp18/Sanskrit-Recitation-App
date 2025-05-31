@@ -1,4 +1,6 @@
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'verses_model.dart';
 
@@ -12,7 +14,8 @@ class VerseRepository {
 
   // Cached data
   List<Verse_1>? _allVerses;
-  Map<String, List<String>>? _audioMappings;
+  List<dynamic>? _audioMappings;
+  Set<String>? _availableAudioFiles;
 
   /// Loads all verses with their audio mappings
   Future<List<Verse_1>> getAllVerses() async {
@@ -25,14 +28,59 @@ class VerseRepository {
     final List<dynamic> gitaVerses = json.decode(gitaJsonString);
     
     // Load audio mappings
-    final audioMappings = await _getAudioMappings();
+
+    // Get available audio files
+    await _loadAvailableAudioFiles();
     
     // Create verse objects and merge with audio mappings
     _allVerses = gitaVerses.map((verseJson) {
+      // Create verse from json
       final verse = Verse_1.fromJson(verseJson);
-      final audioPaths = audioMappings[verse.verseId] ?? [];
       
-      // Create a new verse with the audio paths included
+      // Find matching audio mapping (if it exists)
+      final audioMapping = _findAudioMapping(verse.chapter, verse.shloka);
+      
+      // Generate audio path using the correct format if chapter and shloka exist
+      String? audioPath;
+      List<AudioSegment>? segments;
+      
+      if (verse.chapter.isNotEmpty && verse.shloka.isNotEmpty) {
+        // Format the expected audio file path exactly as it appears in the asset folder
+        // No need to encode/escape spaces at this stage - we'll handle that properly when creating the AssetSource
+        final expectedAudioPath = 'Audio/BrajaBeats_Gita_MP3/Bhagavad-gita ${verse.chapter}.${verse.shloka}.mp3';
+        
+        // Debug log to check the audio path we're looking for
+        debugPrint('Looking for audio file: $expectedAudioPath');
+        
+        // Check if this audio file exists in our known set of files by comparing with normalized paths
+        // This handles case sensitivity and slight formatting differences
+        final String normalizedPath = expectedAudioPath.toLowerCase().trim();
+        final audioExists = _availableAudioFiles?.any((file) => 
+          file.toLowerCase().trim() == normalizedPath
+        ) ?? false;
+        
+        if (audioExists) {
+          // Get the exact path as it exists in the assets (preserving case)
+          final exactPath = _availableAudioFiles?.firstWhere(
+            (file) => file.toLowerCase().trim() == normalizedPath,
+            orElse: () => expectedAudioPath
+          );
+          
+          audioPath = exactPath;
+          debugPrint('Found audio file: $audioPath');
+          
+          // If we have segments from the audio mapping, use them
+          if (audioMapping != null && audioMapping['segments'] != null) {
+            segments = (audioMapping['segments'] as List)
+                .map((segment) => AudioSegment.fromJson(segment))
+                .toList();
+          }
+        } else {
+          debugPrint('Audio file not found for ${verse.chapter}.${verse.shloka}');
+        }
+      }
+      
+      // Create a new verse with the audio path and segments included
       return Verse_1(
         chapter: verse.chapter,
         shloka: verse.shloka,
@@ -41,7 +89,8 @@ class VerseRepository {
         synonyms: verse.synonyms,
         translation: verse.translation,
         purport: verse.purport,
-        audioPaths: audioPaths,
+        audioPath: audioPath,
+        segments: segments,
         verseId: verse.verseId,
       );
     }).toList();
@@ -54,6 +103,11 @@ class VerseRepository {
     final allVerses = await getAllVerses();
     return allVerses.where((verse) => verse.chapter == chapterId).toList();
   }
+  Future<List<Verse_1>> getVersesForChapterAndShloka(String chapterId, String shlokaId) async {
+    final allVerses = await getAllVerses();
+    return allVerses.where((verse) => verse.chapter == chapterId && verse.shloka == shlokaId).toList();
+  }
+  
 
   /// Get a specific verse by chapter and shloka
   Future<Verse_1?> getVerse(String chapter, String shloka) async {
@@ -67,23 +121,139 @@ class VerseRepository {
     }
   }
 
+  /// Load list of available audio files 
+  Future<void> _loadAvailableAudioFiles() async {
+    if (_availableAudioFiles != null) {
+      return;
+    }
+    
+    _availableAudioFiles = {};
+    
+    try {
+      // Load the asset manifest to check which audio files are actually available
+      final manifestContent = await rootBundle.loadString('AssetManifest.json');
+      final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+      
+      debugPrint('Loading audio files from manifest...');
+      
+      // Filter audio files and add them to our set
+      for (var asset in manifestMap.keys) {
+        if (asset.contains('/Audio/BrajaBeats_Gita_MP3/') && 
+            asset.endsWith('.mp3')) {
+          // Store without the 'assets/' prefix since AudioPlayers adds it
+          final audioPath = asset.replaceFirst('assets/', '');
+          _availableAudioFiles!.add(audioPath);
+          debugPrint('Found audio file in manifest: $audioPath');
+        }
+      }
+      
+      debugPrint('Found ${_availableAudioFiles!.length} audio files available');
+      
+      // If we didn't find any audio files, probably we're running in dev mode
+      // and the manifest doesn't have all entries - try a hardcoded approach
+      if (_availableAudioFiles!.isEmpty) {
+        _addHardcodedAudioFiles();
+      }
+    } catch (e) {
+      debugPrint('Error loading available audio files: $e');
+      // Hard-code some known audio files as a fallback
+      _addHardcodedAudioFiles();
+    }
+  }
+  
+  /// Add hardcoded audio files if we can't load from manifest
+  void _addHardcodedAudioFiles() {
+    debugPrint('Using hardcoded audio file paths as fallback');
+    
+    // Add all the audio files that we know about
+    for (var file in _getKnownAudioFiles()) {
+      _availableAudioFiles!.add(file);
+    }
+  }
+  
+  /// Get a list of all audio files we know are available
+  List<String> _getKnownAudioFiles() {
+    // This is a list of audio files we know exist in the assets folder
+    // Generate paths for all chapters 1-18 and shlokas 1-78 (maximum)
+    List<String> files = [];
+    
+    // Add specific known audio files
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.14.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.16.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.31.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.32.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.33.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.34.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.38.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.40.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.43.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.6.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.1.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.15.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.23.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.26.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.6.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.9.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.10.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.14.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.17.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.18.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.26.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.6.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.7.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 15.12.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 15.13.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 15.14.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 15.15.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 15.9.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 16.13.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 16.3.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 17.19.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 17.21.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 17.23.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 17.28.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.23.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.27.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.3.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.30.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.31.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.33.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.36.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.47.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.49.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.57.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.66.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.2.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.21.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.27.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.34.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.35.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.44.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.50.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.65.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.7.mp3');
+    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.72.mp3');
+    
+    // Add more files as needed
+    
+    return files;
+  }
+
   /// Load audio mappings from audio_mappings.json
-  Future<Map<String, List<String>>> _getAudioMappings() async {
-    if (_audioMappings != null) {
-      return _audioMappings!;
+
+  /// Find audio mapping for a specific chapter and shloka
+  Map<String, dynamic>? _findAudioMapping(String chapter, String shloka) {
+    if (_audioMappings == null || _audioMappings!.isEmpty) {
+      return null;
     }
-    
-    final String mappingJsonString = await rootBundle.loadString('assets/audio_mappings.json');
-    final Map<String, dynamic> mappingData = json.decode(mappingJsonString);
-    final List<dynamic> mappings = mappingData['mappings'];
-    
-    _audioMappings = {};
-    for (var mapping in mappings) {
-      final String verseId = mapping['verseId'];
-      final List<String> audioPaths = List<String>.from(mapping['audioPaths']);
-      _audioMappings![verseId] = audioPaths;
+
+    try {
+      return _audioMappings!.firstWhere(
+        (mapping) => mapping['chapter'] == chapter && mapping['shloka'] == shloka,
+        orElse: () => {},
+      );
+    } catch (e) {
+      return null;
     }
-    
-    return _audioMappings!;
   }
 }

@@ -6,11 +6,11 @@ class HamburgerButton extends StatelessWidget {
   final Function(String) onViewSelected;
 
   const HamburgerButton({
-    Key? key,
+    super.key,
     required this.selectedViews,
     required this.viewOptions,
     required this.onViewSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:sanskrit_racitatiion_project/splash.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:provider/provider.dart';
+import 'package:sanskrit_racitatiion_project/theme/theme_provider.dart';
+import 'package:sanskrit_racitatiion_project/widgets/global_audio_player.dart';
+import 'package:sanskrit_racitatiion_project/audio/audio_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  // Initialize AudioPlayer global settings
+  AudioCache.instance = AudioCache(prefix: '');
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => GlobalAudioProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -10,17 +25,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Access the theme from the provider
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
     return MaterialApp(
       title: 'Sanskrit Recitation',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrangeAccent),
-        useMaterial3: true,
-
+      theme: themeProvider.currentTheme,
+      home: Stack(
+        children: [
+          SplashPage(),
+          // Floating audio player overlay
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: false,
+              child: GlobalAudioPlayerWidget(),
+            ),
+          ),
+        ],
       ),
-      home: SplashPage(),
-
     );
   }
 }

@@ -78,10 +78,11 @@ class _HomePageState extends State<HomePage> {
         child: GridView.builder(
           itemCount: chapterIds.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, // More rows
-            crossAxisSpacing: 1, // More space between
-            mainAxisSpacing: 1, // More space between rows
-            childAspectRatio: 0.95,
+            crossAxisCount: 3, // More columns
+            crossAxisSpacing: 12, // More space between columns
+            mainAxisSpacing: 12, // More space between rows
+            childAspectRatio: 3.5,
+
           ),
           itemBuilder: (context, index) {
             final chapterId = chapterIds[index];
@@ -121,8 +122,10 @@ class _HomePageState extends State<HomePage> {
                   'Chapter $chapterId',
                   style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: Color(0xFF2C2C54),
+
+                  fontSize: 18, // Increased from 15 to 18
+                  color: Colors.deepPurple,
+
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -131,8 +134,8 @@ class _HomePageState extends State<HomePage> {
                   chapterTitle,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 14, // Increased from 12 to 14
+                  fontWeight: FontWeight.w500,
                   color: Colors.black87,
                   ),
                 ),
@@ -146,7 +149,7 @@ class _HomePageState extends State<HomePage> {
                     foregroundColor: Color(0xFFFF9933),
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                    textStyle: const TextStyle(fontSize: 11),
+                    textStyle: const TextStyle(fontSize: 13), // Increased from 11 to 13
                     minimumSize: const Size(0, 30),
                     ),
                     icon: const Icon(Icons.menu_book, size: 16),
@@ -166,7 +169,7 @@ class _HomePageState extends State<HomePage> {
                     side: const BorderSide(color: Colors.deepPurpleAccent),
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                    textStyle: const TextStyle(fontSize: 11),
+                    textStyle: const TextStyle(fontSize: 13), // Increased from 11 to 13
                     minimumSize: const Size(0, 30),
                     ),
                     icon: const Icon(Icons.lightbulb, size: 16),
