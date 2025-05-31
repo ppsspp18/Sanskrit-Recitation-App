@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verse_repository.dart';
+import 'package:sanskrit_racitatiion_project/bookmark_screen/bookmark_manager.dart';
+
 class GitaVersePage extends StatefulWidget {
   final Verse_1 verse;
   final void Function(bool)? onNavigate; // Callback for navigation
@@ -38,9 +40,16 @@ class _GitaVersePageState extends State<GitaVersePage> {
   bool isPlaying = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
+
   String? _errorMessage;
   bool _isLoading = false;
-  
+  late String _selectedAudio;
+  late Map<String, String> _audioFiles;
+  Set<String> _selectedViews = {};
+  bool isBookmarked = false;
+  String get verseId => '${widget.verse.chapter}:${widget.verse.shloka}';
+
+
   // For tooltip display
   bool _tooltipVisible = true;
   String _tooltipText = '';
@@ -65,6 +74,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
   @override
   void initState() {
     super.initState();
+    _loadBookmarkStatus();
     
     // Set up audio player if audio path is available
     if (widget.verse.audioPath != null) {
@@ -292,81 +302,133 @@ class _GitaVersePageState extends State<GitaVersePage> {
     });
   }
 
-  // Navigate to previous verse
-  void _navigateToPreviousVerse() {
-    if (widget.onNavigate != null) {
-      // Direct navigation without alert
-      widget.onNavigate!(false);
-    } else {
-      // Fallback if no navigation callback provided
-      Navigator.pop(context);
-    }
-  }
+//   // Navigate to previous verse
+//   void _navigateToPreviousVerse() {
+//     if (widget.onNavigate != null) {
+//       // Direct navigation without alert
+//       widget.onNavigate!(false);
+//     } else {
+//       // Fallback if no navigation callback provided
+//       Navigator.pop(context);
+//     }
+//   }
 
-  // Navigate to next verse
-  void _navigateToNextVerse() {
-    // Check if this is the last verse
-    if (_isLastVerse()) {
-      // Show feedback that this is the last verse
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This is the last verse in this chapter'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
+//   // Navigate to next verse
+//   void _navigateToNextVerse() {
+//     // Check if this is the last verse
+//     if (_isLastVerse()) {
+//       // Show feedback that this is the last verse
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(
+//           content: Text('This is the last verse in this chapter'),
+//           duration: Duration(seconds: 2),
+//         ),
+//       );
+//       return;
+//     }
     
-    if (widget.onNavigate != null) {
-      // Direct navigation to next verse
-      widget.onNavigate!(true);
-    } else {
-      // Get current verse details
-      final currentChapter = widget.verse.chapter;
-      final currentShloka = int.parse(widget.verse.shloka.toString());
+//     if (widget.onNavigate != null) {
+//       // Direct navigation to next verse
+//       widget.onNavigate!(true);
+//     } else {
+//       // Get current verse details
+//       final currentChapter = widget.verse.chapter;
+//       final currentShloka = int.parse(widget.verse.shloka.toString());
       
-      // Calculate next verse
-      final nextShloka = (currentShloka + 1).toString();
+//       // Calculate next verse
+//       final nextShloka = (currentShloka + 1).toString();
       
-      // Here you would typically fetch the next verse from your data source
-      // This is a placeholder - you need to implement verse fetching logic
-      // based on your actual data structure
+//       // Here you would typically fetch the next verse from your data source
+//       // This is a placeholder - you need to implement verse fetching logic
+//       // based on your actual data structure
       
 
       
-      // For now, just show a message that navigation isn't implemented
-      ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigation to specific verses not implemented yet'),
-        duration: Duration(seconds: 2),
-      ),
-      );
-      // Fallback if no navigation callback provided
-      Navigator.pop(context);
-    }
-  }
+//       // For now, just show a message that navigation isn't implemented
+//       ScaffoldMessenger.of(context).showSnackBar(
+//       const SnackBar(
+//         content: Text('Navigation to specific verses not implemented yet'),
+//         duration: Duration(seconds: 2),
+//       ),
+//       );
+//       // Fallback if no navigation callback provided
+//       Navigator.pop(context);
+//     }
+//   }
 
-  // Check if this is the first verse in the chapter
-  bool _isFirstVerse() {
-    return widget.verse.shloka == 1;
-  }
+//   // Check if this is the first verse in the chapter
+//   bool _isFirstVerse() {
+//     return widget.verse.shloka == 1;
+//   }
 
-  // Check if this is the last verse in the chapter
-  bool _isLastVerse() {
-    // This is a simplified implementation. In a real app, you would check against the actual number of verses in each chapter.
-    // Placeholder logic - replace with actual chapter verse counts
-    Map<int, int> chapterVerseCount = {
-      1: 47, 2: 72, 3: 43, 4: 42, 5: 29, 6: 47,
-      7: 30, 8: 28, 9: 34, 10: 42, 11: 55, 12: 20,
-      13: 35, 14: 27, 15: 20, 16: 24, 17: 28, 18: 78
-    };
+//   // Check if this is the last verse in the chapter
+//   bool _isLastVerse() {
+//     // This is a simplified implementation. In a real app, you would check against the actual number of verses in each chapter.
+//     // Placeholder logic - replace with actual chapter verse counts
+//     Map<int, int> chapterVerseCount = {
+//       1: 47, 2: 72, 3: 43, 4: 42, 5: 29, 6: 47,
+//       7: 30, 8: 28, 9: 34, 10: 42, 11: 55, 12: 20,
+//       13: 35, 14: 27, 15: 20, 16: 24, 17: 28, 18: 78
+//     };
     
-    int? totalVerses = chapterVerseCount[int.parse(widget.verse.chapter.toString())];
-    return totalVerses != null && int.parse(widget.verse.shloka.toString()) == totalVerses;
+//     int? totalVerses = chapterVerseCount[int.parse(widget.verse.chapter.toString())];
+//     return totalVerses != null && int.parse(widget.verse.shloka.toString()) == totalVerses;
+//   }
+  
+  
+
+      // Toggle the selected view
+      if (_selectedViews.contains(view)) {
+        _selectedViews.remove(view);
+      } else {
+        _selectedViews.add(view);
+      }
+
+      // Clear all first
+      _showSanskrit = false;
+      _showEnglish = false;
+      _showWordMeanings = false;
+      _showTranslation = false;
+      _showPurport = false;
+
+      // If 'All' is selected, show everything
+      if (_selectedViews.contains('All')) {
+        _showSanskrit = true;
+        _showEnglish = true;
+        _showWordMeanings = true;
+        _showTranslation = true;
+        _showPurport = true;
+      } else {
+        // Enable based on selected individual views
+        if (_selectedViews.contains('Sanskrit')) _showSanskrit = true;
+        if (_selectedViews.contains('English')) {
+          _showEnglish = true;
+        }
+        if (_selectedViews.contains('Word Meanings')) _showWordMeanings = true;
+        if (_selectedViews.contains('Translation')) _showTranslation = true;
+        if (_selectedViews.contains('Purport')) _showPurport = true;
+      }
+    });
   }
-  
- 
-  
+
+  void _loadBookmarkStatus() async {
+    bool bookmarked = await BookmarkManager.isBookmarked(verseId);
+    setState(() {
+      isBookmarked = bookmarked;
+    });
+  }
+
+  void _toggleBookmark() async {
+    if (isBookmarked) {
+      await BookmarkManager.removeBookmark(verseId);
+    } else {
+      await BookmarkManager.addBookmark(verseId);
+    }
+
+    setState(() {
+      isBookmarked = !isBookmarked;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -397,8 +459,9 @@ class _GitaVersePageState extends State<GitaVersePage> {
         appBar: AppBar(
           title: Text(
             'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: Color(0xFFFF9933)),
           ),
+
           backgroundColor: _GitaVersePageState.primaryColor,
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
@@ -415,14 +478,33 @@ class _GitaVersePageState extends State<GitaVersePage> {
               ),
             ),
           ],
+
         ),
         body: Stack(
           children: [
             Column(
               children: [
-                // Advanced view controls - only show when in advanced mode
-                if (_isAdvancedView)
-                  _buildAdvancedViewControls(),
+                // View selection row
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF8F9FA),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    children: _viewOptions.map((view) => 
+                      _buildViewOption(view),
+                    ).toList(),
+                  ),
+                ),
                 
                 // Main content - all in a single scrollable column
                 Expanded(
@@ -440,6 +522,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                               // Card header
                               Container(
                                 padding: const EdgeInsets.all(16.0),
+
                                 // decoration: const BoxDecoration(
                                 //   color: _GitaVersePageState.cardBackgroundColor,
                                 //   border: Border(
@@ -449,26 +532,38 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                 //     ),
                                 //   ),
                                 // ),
+
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFFE0B2),
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: Color(0xFFE9ECEF),
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                ),
+
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
                                       style: const TextStyle(
+
                                         fontSize: _GitaVersePageState.fontSizeHeading,
+
                                         fontWeight: FontWeight.bold,
+                                        color: Color(0xFF2C2C54),
                                       ),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.bookmark_add_outlined),
-                                      color: _GitaVersePageState.primaryColor,
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Bookmark feature coming soon'),
-                                          ),
-                                        );
-                                      },
+
+
+                                      icon: Icon(
+                                        isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                                        color: isBookmarked ? Colors.orange : Colors.white,
+                                      ),
+                                      onPressed: _toggleBookmark,
                                     ),
                                   ],
                                 ),
@@ -504,7 +599,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                     
                                     // Word Meanings section
                                     if (_showSynonyms && widget.verse.synonyms.isNotEmpty)
-                                      _buildExpandedSection(
+                                     _buildExpandedSection(
+
                                         'Synonyms',
                                         _buildWordMeanings(),
                                       ),
@@ -550,6 +646,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                               ),
                               
                               // Audio player section
+
                               Container(
                                 padding: const EdgeInsets.all(16.0),
                                 // decoration: const BoxDecoration(
@@ -563,8 +660,9 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                 // ),
                                 child: widget.verse.audioPath != null
                                   ? _buildAudioPlayerControls()
-                                  : _buildAudioComingSoon(),
+                                 : _buildAudioComingSoon(),
                               ),
+
                             ],
                           ),
                         ),
@@ -590,21 +688,23 @@ class _GitaVersePageState extends State<GitaVersePage> {
                       maxWidth: MediaQuery.of(context).size.width * 0.7,
                     ),
                     padding: const EdgeInsets.all(12.0),
-                    // decoration: BoxDecoration(
-                    //   color: _GitaVersePageState.backgroundColor,
-                    //   borderRadius: BorderRadius.circular(8.0),
-                    //   boxShadow: [
-                    //     BoxShadow(
-                    //       color: Colors.black.withOpacity(0.2),
-                    //       blurRadius: 6.0,
-                    //       offset: const Offset(0, 2),
-                    //     ),
-                    //   ],
-                    //   border: Border.all(
-                    //     color: _tooltipLocked ? _GitaVersePageState.primaryColor : Colors.grey.shade300,
-                    //     width: 1.0,
-                    //   ),
-                    // ),
+
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 6.0,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: _tooltipLocked ? Color(0xFF2C2C54) : Colors.grey.shade300,
+                        width: 1.0,
+                      ),
+                    ),
+
                     child: Text(
                       _tooltipText,
                       style: const TextStyle(fontSize: _GitaVersePageState.fontSizeCaption),
@@ -617,9 +717,46 @@ class _GitaVersePageState extends State<GitaVersePage> {
       ),
     );
   }
+// <<<<<<< main
   
   // Build the advanced view controls with toggle switches
   Widget _buildAdvancedViewControls() {
+// =======
+
+//   Widget _buildViewOption(String view) {
+//     final isSelected = _selectedViews.contains(view);
+
+//     return GestureDetector(
+//       onTap: () {
+//         _updateVisibility(view);
+//       },
+//       child: Container(
+//         margin: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
+//         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+//         decoration: BoxDecoration(
+//           color: isSelected ? const Color(0xFF2C2C54) : Colors.grey.shade100,
+//           borderRadius: BorderRadius.circular(20.0),
+//           border: Border.all(
+//             color: isSelected ? const Color(0xFF2C2C54) : Colors.grey.shade300,
+//             width: 1.0,
+//           ),
+//         ),
+//         alignment: Alignment.center,
+//         child: Text(
+//           view,
+//           style: TextStyle(
+//             color: isSelected ? const Color(0xFFFF9933) : Colors.black87,
+//             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+//             fontSize: 14.0,
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+
+//   Widget _buildBreadcrumb() {
+// >>>>>>> main
     return Container(
       padding: const EdgeInsets.all(16.0),
       // decoration: BoxDecoration(
@@ -635,6 +772,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+// <<<<<<< main
           const Text(
             'Show/Hide Sections',
             style: TextStyle(
@@ -663,6 +801,47 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 setState(() => _showPurport = value);
               }),
             ],
+// =======
+//           TextButton(
+//             onPressed: () {
+//               Navigator.pop(context);
+//             },
+//             style: TextButton.styleFrom(
+//               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+//               minimumSize: Size.zero,
+//               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+//             ),
+//             child: const Text('Scriptures', style: TextStyle(color: Color(0xFF2C2C54))),
+//           ),
+//           const Text(' / ', style: TextStyle(color: Color(0xFF2C2C54))),
+//           TextButton(
+//             onPressed: () {
+//               Navigator.pop(context);
+//             },
+//             style: TextButton.styleFrom(
+//               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+//               minimumSize: Size.zero,
+//               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+//             ),
+//             child: const Text('Bhagavad Gita', style: TextStyle(color: Color(0xFF2C2C54))),
+//           ),
+//           const Text(' / ', style: TextStyle(color: Color(0xFF2C2C54))),
+//           TextButton(
+//             onPressed: () {
+//               Navigator.pop(context);
+//             },
+//             style: TextButton.styleFrom(
+//               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+//               minimumSize: Size.zero,
+//               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+//             ),
+//             child: Text('Chapter ${widget.verse.chapter}', style: TextStyle(color: Color(0xFF2C2C54))),
+//           ),
+//           const Text(' / ', style: TextStyle(color: Color(0xFF2C2C54))),
+//           Text(
+//             'Verse ${widget.verse.shloka}',
+//             style: const TextStyle(color: Color(0xFF2C2C54), fontWeight: FontWeight.bold),
+
           ),
         ],
       ),
@@ -696,6 +875,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
             fontSize: _GitaVersePageState.fontSizeHeading,
             fontWeight: FontWeight.bold,
             color: _GitaVersePageState.primaryColor,
+
           ),
         ),
         const SizedBox(height: 12.0),
@@ -796,6 +976,25 @@ class _GitaVersePageState extends State<GitaVersePage> {
             meaning = entry.value.meaning;
             usedSynonyms.add(entry.key);
             break;
+
+//   Widget _buildInteractiveLine(String line, bool isFullView) {
+//     final words = line.split(' ');
+
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(vertical: 4.0),
+//       child: Wrap(
+//         alignment: WrapAlignment.center,
+//         spacing: 4.0,
+//         runSpacing: 4.0,
+//         children: words.map((word) {
+//           String? meaning;
+//           for (var entry in widget.verse.synonyms.entries) {
+//             if (word.toLowerCase().contains(entry.key.toLowerCase()) ||
+//                 entry.key.toLowerCase().contains(word.toLowerCase())) {
+//               meaning = entry.value.meaning;
+//               break;
+//             }
+
           }
         } else if (cleanWord.startsWith(cleanKey.substring(0, (cleanKey.length * 0.5).round()))) {
           meaning = entry.value.meaning;
@@ -823,7 +1022,6 @@ class _GitaVersePageState extends State<GitaVersePage> {
       // if (_customMeanings.containsKey(word)) {
       //   meaning = _customMeanings[word];
       // } else {
-
       //   meaning ??= ' ';
       // }
       // if no meaning found then append the present word to previous word part and store the final word in a new list
@@ -862,6 +1060,32 @@ class _GitaVersePageState extends State<GitaVersePage> {
                   fontSize: fontSizeSanskrit,
                   color: textPrimaryColor,
                   fontWeight: FontWeight.w500,
+
+//           return GestureDetector(
+//             onTapDown: (details) {
+//               if (meaning != null) {
+//                 final Offset position = details.globalPosition;
+//                 _showTooltip('$word: $meaning', Offset(position.dx, position.dy + 20));
+//               }
+//             },
+//             onTap: () {
+//               if (meaning != null) {
+//                 _toggleTooltipLock();
+//               }
+//             },
+//             child: Container(
+//               padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 2.0),
+//               decoration: BoxDecoration(
+//                 border: meaning != null
+//                     ? const Border(bottom: BorderSide(color: Color(0xFF2C2C54), width: 1.0))
+//                     : null,
+//               ),
+//               child: Text(
+//                 word,
+//                 style: TextStyle(
+//                   fontSize: isFullView ? 22 : 18,
+//                   color: meaning != null ? Color(0xFF2C2C54) : Colors.black87,
+
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -962,6 +1186,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     );
   }
 
+
   Widget _buildExpandedSection(String title, Widget content) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -983,6 +1208,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                     fontSize: _GitaVersePageState.fontSizeHeading,
                     fontWeight: FontWeight.bold,
                     color: _GitaVersePageState.primaryColor,
+
                   ),
                 ),
               ],
@@ -1065,6 +1291,74 @@ class _GitaVersePageState extends State<GitaVersePage> {
                   foregroundColor: Colors.white, 
                   backgroundColor: _GitaVersePageState.primaryColor,
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+
+//       padding: EdgeInsets.all(isFullView ? 0.0 : 16.0),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: widget.verse.synonyms.entries.map((entry) {
+//           return Container(
+//             margin: const EdgeInsets.only(bottom: 16.0),
+//             padding: const EdgeInsets.all(12.0),
+//             decoration: BoxDecoration(
+//               color: isFullView ? Colors.grey.shade50 : null,
+//               borderRadius: isFullView ? BorderRadius.circular(8.0) : null,
+//               border: isFullView ? Border.all(color: Colors.grey.shade200) : null,
+//             ),
+//             child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 Text(
+//                   entry.key,
+//                   style: TextStyle(
+//                     fontWeight: FontWeight.bold,
+//                     fontSize: isFullView ? 18 : 16,
+//                     color: Color(0xFF2C2C54),
+//                   ),
+//                 ),
+//                 const SizedBox(height: 8.0),
+//                 Row(
+//                   crossAxisAlignment: CrossAxisAlignment.start,
+//                   children: [
+//                     Text(
+//                       "Word: ",
+//                       style: TextStyle(
+//                         fontWeight: FontWeight.bold,
+//                         fontSize: isFullView ? 16 : 14,
+//                         color: Colors.grey.shade800,
+//                       ),
+//                     ),
+//                     Expanded(
+//                       child: Text(
+//                         entry.value.versetext,
+//                         style: TextStyle(
+//                           fontSize: isFullView ? 16 : 14,
+//                         ),
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//                 const SizedBox(height: 4.0),
+//                 Row(
+//                   crossAxisAlignment: CrossAxisAlignment.start,
+//                   children: [
+//                     Text(
+//                       "Meaning: ",
+//                       style: TextStyle(
+//                         fontWeight: FontWeight.bold,
+//                         fontSize: isFullView ? 16 : 14,
+//                         color: Colors.grey.shade800,
+//                       ),
+//                     ),
+//                     Expanded(
+//                       child: Text(
+//                         entry.value.meaning,
+//                         style: TextStyle(
+//                           fontSize: isFullView ? 16 : 14,
+//                         ),
+//                       ),
+//                     ),
+//                   ],
+
                 ),
               )
             ), // Add ripple effect for better feedback
@@ -1094,6 +1388,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
           style: TextStyle(
             fontSize: _GitaVersePageState.fontSizeHeading,
             fontWeight: FontWeight.bold,
+            color: Color(0xFF2C2C54),
           ),
         ),
         const SizedBox(height: 16.0),
@@ -1105,23 +1400,30 @@ class _GitaVersePageState extends State<GitaVersePage> {
               iconSize: 48.0,
               color: _GitaVersePageState.primaryColor,
               disabledColor: _GitaVersePageState.textSecondaryColor,
+
             ),
             const SizedBox(width: 8.0),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Slider(
-                    value: _position.inSeconds.toDouble(),
-                    max: _duration.inSeconds.toDouble(),
-                    min: 0,
-                    activeColor: _GitaVersePageState.primaryColor,
-                    inactiveColor: Colors.grey.shade300,
-                    onChanged: _isLoading || _errorMessage != null
-                      ? null
-                      : (value) async {
-                          await _audioPlayer.seek(Duration(seconds: value.toInt()));
-                        },
+
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: Color(0xFF2C2C54),
+                      inactiveTrackColor: Colors.grey.shade300,
+                      thumbColor: Color(0xFF2C2C54),
+                      overlayColor: Colors.deepPurple.withOpacity(0.2),
+                      trackHeight: 4.0,
+                    ),
+                    child: Slider(
+                      min: 0,
+                      max: _duration.inSeconds.toDouble(),
+                      value: _position.inSeconds.toDouble(),
+                      onChanged: (value) async {
+                        await _audioPlayer.seek(Duration(seconds: value.toInt()));
+                      },
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1142,6 +1444,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                             fontSize: _GitaVersePageState.fontSizeSmall,
                           ),
                         ),
+
                       ],
                     ),
                   ),

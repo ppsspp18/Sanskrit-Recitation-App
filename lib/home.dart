@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart';
 // import 'package:sanskrit_racitatiion_project/verse_page/chapterPage.dart';
 import 'package:sanskrit_racitatiion_project/chapter_page.dart';
+import 'package:sanskrit_racitatiion_project/search.dart';
+import 'package:sanskrit_racitatiion_project/bookmark_screen/book_mark.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -24,12 +27,13 @@ class _HomePageState extends State<HomePage> {
           'BHAGAVAD GITA',
           style: TextStyle(
         fontWeight: FontWeight.bold,
+        fontSize: 14,
         letterSpacing: 2,
-        color: Colors.white,
+        color: Color(0xFFFF9933),
           ),
         ),
-        backgroundColor: Colors.deepOrange,
-        foregroundColor: Colors.white,
+        backgroundColor: Color(0xFF2C2C54),
+        foregroundColor: Color(0xFFFF9933),
         elevation: 6,
         centerTitle: true,
         shape: const RoundedRectangleBorder(
@@ -39,14 +43,33 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const SettingsScreen()),
-          );
-        },
-        icon: const Icon(Icons.settings, color: Colors.white),
-        tooltip: 'Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchScreen()),
+              );
+            },
+            icon: const Icon(Icons.search, color: Color(0xFFFF9933)), // Search icon
+            tooltip: 'Search',
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) =>  BookmarkScreen()),
+              );
+            },
+            icon: const Icon(Icons.bookmark, color: Color(0xFFFF9933)), // Bookmark icon
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+            icon: const Icon(Icons.settings, color: Color(0xFFFF9933)), // Settings icon
+            tooltip: 'Settings',
           ),
         ],
       ),
@@ -59,6 +82,7 @@ class _HomePageState extends State<HomePage> {
             crossAxisSpacing: 12, // More space between columns
             mainAxisSpacing: 12, // More space between rows
             childAspectRatio: 3.5,
+
           ),
           itemBuilder: (context, index) {
             final chapterId = chapterIds[index];
@@ -85,10 +109,9 @@ class _HomePageState extends State<HomePage> {
             ];
             final chapterTitle = chapterTitles.length > index ? chapterTitles[index] : "Chapter $chapterId";
             return Card(
-              
-              elevation: 6,
+
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              color: Colors.orangeAccent[50],
+              color: const Color(0xFFFFE0B2),
               child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
@@ -99,8 +122,10 @@ class _HomePageState extends State<HomePage> {
                   'Chapter $chapterId',
                   style: const TextStyle(
                   fontWeight: FontWeight.bold,
+
                   fontSize: 18, // Increased from 15 to 18
                   color: Colors.deepPurple,
+
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -114,14 +139,14 @@ class _HomePageState extends State<HomePage> {
                   color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Row(
+                const SizedBox(height: 5),
+                Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurpleAccent,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Color(0xFF2C2C54),
+                    foregroundColor: Color(0xFFFF9933),
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                     textStyle: const TextStyle(fontSize: 13), // Increased from 11 to 13
@@ -136,10 +161,11 @@ class _HomePageState extends State<HomePage> {
                     );
                     },
                   ),
+                  const SizedBox(height: 5),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.deepPurpleAccent,
+                    backgroundColor: Color(0xFF2C2C54),
+                    foregroundColor: Color(0xFFFF9933),
                     side: const BorderSide(color: Colors.deepPurpleAccent),
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),

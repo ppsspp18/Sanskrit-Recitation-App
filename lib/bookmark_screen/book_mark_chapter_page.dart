@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verse_detail_screen.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verse_repository.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 //import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart';
 //import 'package:sanskrit_racitatiion_project/book_mark.dart';
 
-class ChapterPage extends StatefulWidget {
+class BookmarkChapterPage extends StatefulWidget {
   final String chapterId;
-  const ChapterPage({super.key, required this.chapterId});
+  const BookmarkChapterPage({super.key, required this.chapterId});
 
   @override
-  State<ChapterPage> createState() => _ChapterPageState();
+  State<BookmarkChapterPage> createState() => _BookmarkChapterPageState();
 }
 
-class _ChapterPageState extends State<ChapterPage> {
+class _BookmarkChapterPageState extends State<BookmarkChapterPage> {
   final VerseRepository _repository = VerseRepository();
   List<Verse_1> verses = [];
   bool _isLoading = true;
@@ -27,15 +28,30 @@ class _ChapterPageState extends State<ChapterPage> {
   Future<void> _loadChapterVerses() async {
     try {
       final loadedVerses = await _repository.getVersesForChapter(widget.chapterId);
+
+      // Load bookmarks
+      final prefs = await SharedPreferences.getInstance();
+      final bookmarked = prefs.getStringList('bookmarkedVerses') ?? [];
+
+      // Format for current chapter: "chapter:shloka" => e.g., "2:20"
+      final currentChapter = widget.chapterId;
+      final bookmarkedShlokas = bookmarked
+          .where((id) => id.startsWith('$currentChapter:'))
+          .map((id) => id.split(':')[1]) // get shloka part
+          .toSet();
+
+      final filteredVerses = loadedVerses.where((verse) {
+        return bookmarkedShlokas.contains(verse.shloka.toString());
+      }).toList();
+
       setState(() {
-        verses = loadedVerses;
+        verses = filteredVerses;
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      // You might want to add error handling here
       debugPrint('Error loading verses: $e');
     }
   }
@@ -101,13 +117,12 @@ class _ChapterPageState extends State<ChapterPage> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.deepPurpleAccent,
+                      color: Color(0xFF2C2C54),
                     ),
                   ),
                   // Audio indicator if verse has audio
-                  if (verse.audioPath != null)
-                    const Icon(Icons.audiotrack, color: Colors.deepPurpleAccent),
-
+                  if (verse.audioPaths.isNotEmpty)
+                    const Icon(Icons.audiotrack, color: Color(0xFF2C2C54)),
                 ],
               ),
               const Divider(),
@@ -128,28 +143,6 @@ class _ChapterPageState extends State<ChapterPage> {
                   color: Colors.black87,
                 ),
               ),
-              // Add segment indicator if available
-              if (verse.segments != null && verse.segments!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.segment, 
-                        size: 16, 
-                        color: Colors.deepPurpleAccent,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${verse.segments!.length} segments available',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
             ],
           ),
         ),
