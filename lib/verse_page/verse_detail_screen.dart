@@ -82,7 +82,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
   void initState() {
     super.initState();
     _loadCustomMeanings();
-    _checkBookmark();
+    //_checkBookmark();
     _loadBookmarks();
 
     index = widget.verses.indexWhere((v) => v.shloka == widget.verse.shloka);
@@ -1399,13 +1399,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     );
   }
 
-  Future<void> _checkBookmark() async {
-    final id = "${widget.verse.chapter}:${widget.verse.shloka}";
-    final bookmarked = await BookmarkManager.isBookmarked(id);
-    setState(() {
-      _isBookmarked = bookmarked;
-    });
-  }
+
 
 
 }
