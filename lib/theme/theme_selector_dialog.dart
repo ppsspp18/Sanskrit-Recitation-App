@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sanskrit_racitatiion_project/theme/theme_provider.dart';
-import 'package:sanskrit_racitatiion_project/theme/app_themes.dart';
 
 class ThemeSelectorDialog extends StatelessWidget {
   const ThemeSelectorDialog({Key? key}) : super(key: key);

@@ -24,7 +24,7 @@ class VerseRepository {
     }
     
     // Load verses from gita.json
-    final String gitaJsonString = await rootBundle.loadString('assets/gita.json');
+    final String gitaJsonString = await rootBundle.loadString('gita.json');
     final List<dynamic> gitaVerses = json.decode(gitaJsonString);
     
     // Load audio mappings
@@ -47,7 +47,7 @@ class VerseRepository {
       if (verse.chapter.isNotEmpty && verse.shloka.isNotEmpty) {
         // Format the expected audio file path exactly as it appears in the asset folder
         // No need to encode/escape spaces at this stage - we'll handle that properly when creating the AssetSource
-        final expectedAudioPath = 'Audio/BrajaBeats_Gita_MP3/Bhagavad-gita ${verse.chapter}.${verse.shloka}.mp3';
+        final expectedAudioPath = 'Audio/Bhagavad_gita_${verse.chapter}.${verse.shloka}.mp3';
         
         // Debug log to check the audio path we're looking for
         debugPrint('Looking for audio file: $expectedAudioPath');
@@ -138,7 +138,7 @@ class VerseRepository {
       
       // Filter audio files and add them to our set
       for (var asset in manifestMap.keys) {
-        if (asset.contains('/Audio/BrajaBeats_Gita_MP3/') && 
+        if (asset.contains('/Audio/') && 
             asset.endsWith('.mp3')) {
           // Store without the 'assets/' prefix since AudioPlayers adds it
           final audioPath = asset.replaceFirst('assets/', '');
@@ -176,66 +176,13 @@ class VerseRepository {
     // This is a list of audio files we know exist in the assets folder
     // Generate paths for all chapters 1-18 and shlokas 1-78 (maximum)
     List<String> files = [];
-    
-    // Add specific known audio files
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.14.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.16.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.31.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.32.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.33.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.34.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.38.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.40.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.43.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 1.6.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.1.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.15.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.23.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.26.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.6.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 13.9.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.10.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.14.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.17.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.18.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.26.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.6.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 14.7.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 15.12.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 15.13.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 15.14.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 15.15.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 15.9.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 16.13.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 16.3.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 17.19.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 17.21.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 17.23.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 17.28.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.23.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.27.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.3.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.30.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.31.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.33.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.36.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.47.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.49.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.57.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 18.66.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.2.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.21.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.27.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.34.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.35.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.44.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.50.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.65.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.7.mp3');
-    files.add('Audio/BrajaBeats_Gita_MP3/Bhagavad-gita 2.72.mp3');
-    
-    // Add more files as needed
-    
+    for (int chapter = 1; chapter <= 18; chapter++) {
+      for (int shloka = 1; shloka <= 78; shloka++) {
+        // Format the audio file path
+        String filePath = 'Audio/Bhagavad_gita_${chapter.toString().padLeft(2, '0')}.${shloka.toString().padLeft(2, '0')}.mp3';
+        files.add(filePath);
+      }
+    }
     return files;
   }
 
@@ -253,6 +200,7 @@ class VerseRepository {
         orElse: () => {},
       );
     } catch (e) {
+      debugPrint('Error finding audio mapping for $chapter.$shloka: $e');
       return null;
     }
   }

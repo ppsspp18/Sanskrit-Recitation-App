@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
-import 'package:sanskrit_racitatiion_project/verse_page/verse_repository.dart';
+import 'package:sanskrit_racitatiion_project/verse_page/word_meaning_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sanskrit_racitatiion_project/bookmark_screen/bookmark_manager.dart';
+import 'package:sanskrit_racitatiion_project/verse_page/audio_player_widget.dart';
 
 class GitaVersePage extends StatefulWidget {
   final Verse_1 verse;
@@ -19,6 +21,9 @@ class GitaVersePage extends StatefulWidget {
 }
 
 class _GitaVersePageState extends State<GitaVersePage> {
+  // Services
+  final WordMeaningService _wordMeaningService = WordMeaningService();
+  
   // UI Constants for consistent theming
   // Colors
   static const Color primaryColor = Colors.deepOrangeAccent;
@@ -30,55 +35,93 @@ class _GitaVersePageState extends State<GitaVersePage> {
   // Font Sizes
   static const double fontSizeHeading = 18.0;
   static const double fontSizeSubheading = 16.0;
-  static const double fontSizeBody = 18.0;
+  static const double fontSizeBody = 16.0;
   static const double fontSizeCaption = 14.0;
+  static const double fontSizeSanskrit = 16.0;
+  static const double fontSizeMeaning = 10.0;
   static const double fontSizeSmall = 12.0;
-  static const double fontSizeSanskrit = 25.0;  // For Sanskrit words
-  static const double fontSizeMeaning = 16.0;   // For word meanings
-  
+
+  // Audio player state
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool isPlaying = false;
+  bool _isLoading = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
-
   String? _errorMessage;
-  bool _isLoading = false;
-  late String _selectedAudio;
-  late Map<String, String> _audioFiles;
-  Set<String> _selectedViews = {};
-  bool isBookmarked = false;
-  String get verseId => '${widget.verse.chapter}:${widget.verse.shloka}';
 
+  // Bookmark state
+  bool _isBookmarked = false;
 
+  // UI state
+  bool _isAdvancedView = false;
+  bool _showDevanagari = true;
+  bool _showTransliteration = true;
+  bool _showSynonyms = false;
+  bool _showTranslation = false;
+  bool _showPurport = false;
+
+  // Text editing controller for adding custom meanings
+  final TextEditingController _meaningController = TextEditingController();
+  
   // For tooltip display
-  bool _tooltipVisible = true;
+  bool _tooltipVisible = false;
   String _tooltipText = '';
   Offset _tooltipPosition = Offset.zero;
   bool _tooltipLocked = false;
-  
-  // For custom meanings
+
+  // Custom meanings storage
   Map<String, String> _customMeanings = {};
-  String? _currentSelectedSegment;
-  final TextEditingController _meaningController = TextEditingController();
-  
-  // For view modes
-  bool _isAdvancedView = false;
-  
-  // For content visibility
-  bool _showDevanagari = true;
-  bool _showTransliteration = true;
-  bool _showSynonyms = true; // Changed to true by default
-  bool _showTranslation = true;
-  bool _showPurport = false;
 
   @override
   void initState() {
     super.initState();
-    _loadBookmarkStatus();
+    _loadCustomMeanings();
+    _checkBookmark();
+    
+    // Load word meanings for the verse
+    // _loadWordMeanings();
     
     // Set up audio player if audio path is available
     if (widget.verse.audioPath != null) {
       _setupAudioPlayer();
+    }
+  }
+
+  void _loadWordMeanings() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+      
+      // Check if word meanings are already processed and stored
+      final lines = widget.verse.english.split('\n');
+      
+      for (String line in lines) {
+        if (line.trim().isEmpty) continue;
+        
+        // Try to get pre-processed meanings for this line
+        final processedWords = await _wordMeaningService.getVerseWordMeanings(
+          widget.verse.chapter, 
+          widget.verse.shloka, 
+          line
+        );
+        
+        if (processedWords == null || processedWords.isEmpty) {
+          // Process and store meanings for this verse
+          await _wordMeaningService.processAndStoreVerseMeanings(widget.verse);
+        }
+      }
+      
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading word meanings: $e');
+      setState(() {
+        _errorMessage = 'Error loading word meanings';
+        _isLoading = false;
+      });
     }
   }
 
@@ -273,22 +316,6 @@ class _GitaVersePageState extends State<GitaVersePage> {
     super.dispose();
   }
 
-  void _showTooltip(String text, Offset position) {
-    setState(() {
-      _tooltipText = text;
-      _tooltipPosition = position;
-      _tooltipVisible = true;
-    });
-  }
-
-  void _hideTooltip() {
-    if (!_tooltipLocked) {
-      setState(() {
-        _tooltipVisible = false;
-      });
-    }
-  }
-
   void _toggleTooltipLock() {
     setState(() {
       _tooltipLocked = !_tooltipLocked;
@@ -302,136 +329,105 @@ class _GitaVersePageState extends State<GitaVersePage> {
     });
   }
 
-//   // Navigate to previous verse
-//   void _navigateToPreviousVerse() {
-//     if (widget.onNavigate != null) {
-//       // Direct navigation without alert
-//       widget.onNavigate!(false);
-//     } else {
-//       // Fallback if no navigation callback provided
-//       Navigator.pop(context);
-//     }
-//   }
-
-//   // Navigate to next verse
-//   void _navigateToNextVerse() {
-//     // Check if this is the last verse
-//     if (_isLastVerse()) {
-//       // Show feedback that this is the last verse
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(
-//           content: Text('This is the last verse in this chapter'),
-//           duration: Duration(seconds: 2),
-//         ),
-//       );
-//       return;
-//     }
-    
-//     if (widget.onNavigate != null) {
-//       // Direct navigation to next verse
-//       widget.onNavigate!(true);
-//     } else {
-//       // Get current verse details
-//       final currentChapter = widget.verse.chapter;
-//       final currentShloka = int.parse(widget.verse.shloka.toString());
-      
-//       // Calculate next verse
-//       final nextShloka = (currentShloka + 1).toString();
-      
-//       // Here you would typically fetch the next verse from your data source
-//       // This is a placeholder - you need to implement verse fetching logic
-//       // based on your actual data structure
-      
-
-      
-//       // For now, just show a message that navigation isn't implemented
-//       ScaffoldMessenger.of(context).showSnackBar(
-//       const SnackBar(
-//         content: Text('Navigation to specific verses not implemented yet'),
-//         duration: Duration(seconds: 2),
-//       ),
-//       );
-//       // Fallback if no navigation callback provided
-//       Navigator.pop(context);
-//     }
-//   }
-
-//   // Check if this is the first verse in the chapter
-//   bool _isFirstVerse() {
-//     return widget.verse.shloka == 1;
-//   }
-
-//   // Check if this is the last verse in the chapter
-//   bool _isLastVerse() {
-//     // This is a simplified implementation. In a real app, you would check against the actual number of verses in each chapter.
-//     // Placeholder logic - replace with actual chapter verse counts
-//     Map<int, int> chapterVerseCount = {
-//       1: 47, 2: 72, 3: 43, 4: 42, 5: 29, 6: 47,
-//       7: 30, 8: 28, 9: 34, 10: 42, 11: 55, 12: 20,
-//       13: 35, 14: 27, 15: 20, 16: 24, 17: 28, 18: 78
-//     };
-    
-//     int? totalVerses = chapterVerseCount[int.parse(widget.verse.chapter.toString())];
-//     return totalVerses != null && int.parse(widget.verse.shloka.toString()) == totalVerses;
-//   }
-  
-  
-
-      // Toggle the selected view
-      if (_selectedViews.contains(view)) {
-        _selectedViews.remove(view);
-      } else {
-        _selectedViews.add(view);
-      }
-
-      // Clear all first
-      _showSanskrit = false;
-      _showEnglish = false;
-      _showWordMeanings = false;
-      _showTranslation = false;
-      _showPurport = false;
-
-      // If 'All' is selected, show everything
-      if (_selectedViews.contains('All')) {
-        _showSanskrit = true;
-        _showEnglish = true;
-        _showWordMeanings = true;
-        _showTranslation = true;
-        _showPurport = true;
-      } else {
-        // Enable based on selected individual views
-        if (_selectedViews.contains('Sanskrit')) _showSanskrit = true;
-        if (_selectedViews.contains('English')) {
-          _showEnglish = true;
-        }
-        if (_selectedViews.contains('Word Meanings')) _showWordMeanings = true;
-        if (_selectedViews.contains('Translation')) _showTranslation = true;
-        if (_selectedViews.contains('Purport')) _showPurport = true;
-      }
-    });
-  }
-
-  void _loadBookmarkStatus() async {
-    bool bookmarked = await BookmarkManager.isBookmarked(verseId);
-    setState(() {
-      isBookmarked = bookmarked;
-    });
-  }
-
-  void _toggleBookmark() async {
-    if (isBookmarked) {
-      await BookmarkManager.removeBookmark(verseId);
+  // Navigate to previous verse
+  void _navigateToPreviousVerse() {
+    if (_hasNavigationCallback()) {
+      widget.onNavigate!(false);
     } else {
-      await BookmarkManager.addBookmark(verseId);
+      _fallbackNavigation();
     }
-
-    setState(() {
-      isBookmarked = !isBookmarked;
-    });
   }
 
+  // Navigate to next verse
+  void _navigateToNextVerse() {
+    if (_isLastVerse()) {
+      _showLastVerseMessage();
+      return;
+    }
+    
+    if (_hasNavigationCallback()) {
+      widget.onNavigate!(true);
+    } else {
+      _attemptDirectNavigation();
+    }
+  }
+
+  // Helper method to check if navigation callback is available
+  bool _hasNavigationCallback() {
+    return widget.onNavigate != null;
+  }
+
+  // Show message when reaching the last verse
+  void _showLastVerseMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('This is the last verse in this chapter'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // Fallback navigation method
+  void _fallbackNavigation() {
+    Navigator.pop(context);
+  }
+
+  // Check if this is the first verse in the chapter
+  bool _isFirstVerse() {
+    return widget.verse.shloka == 1;
+  }
+
+  // Check if this is the last verse in the chapter
+  bool _isLastVerse() {
+    final chapterVerseCount = _getChapterVerseCount();
+    final currentShloka = int.parse(widget.verse.shloka.toString());
+    final currentChapter = int.parse(widget.verse.chapter.toString());
+    
+    int? totalVerses = chapterVerseCount[currentChapter];
+    return totalVerses != null && currentShloka == totalVerses;
+  }
+
+  // Get the verse count for each chapter
+  Map<int, int> _getChapterVerseCount() {
+    // Standard Bhagavad Gita chapter verse counts
+    return {
+      1: 47, 2: 72, 3: 43, 4: 42, 5: 29, 6: 47,
+      7: 30, 8: 28, 9: 34, 10: 42, 11: 55, 12: 20,
+      13: 35, 14: 27, 15: 20, 16: 24, 17: 28, 18: 78
+    };
+  }
+
+  // Attempt direct navigation when callback is not available
+  void _attemptDirectNavigation() {
+    // TODO: Implement verse fetching logic based on your data structure
+    // For now, show placeholder message
+    _showNavigationNotImplementedMessage();
+    _fallbackNavigation();
+  }
+
+  // Show message when navigation is not implemented
+  void _showNavigationNotImplementedMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Navigation to specific verses not implemented yet'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // Check if navigation is possible in the given direction
+  bool _canNavigate(bool forward) {
+    if (forward) {
+      return !_isLastVerse();
+    } else {
+      return !_isFirstVerse();
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
+    final onlyAudio = (widget.verse.audioPath != null && widget.verse.audioPath!.isNotEmpty)
+      && (widget.verse.sanskrit.isEmpty && widget.verse.english.isEmpty && (widget.verse.synonyms == null || widget.verse.synonyms.isEmpty) && widget.verse.translation.isEmpty && widget.verse.purport.isEmpty);
     return GestureDetector(
       onTap: () {
         if (_tooltipLocked) {
@@ -459,12 +455,19 @@ class _GitaVersePageState extends State<GitaVersePage> {
         appBar: AppBar(
           title: Text(
             'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
-            style: const TextStyle(color: Color(0xFFFF9933)),
+            style: const TextStyle(color: Colors.white),
           ),
-
           backgroundColor: _GitaVersePageState.primaryColor,
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
+            IconButton(
+              icon: Icon(
+                _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                color: _isBookmarked ? Colors.amber : Colors.white,
+              ),
+              tooltip: _isBookmarked ? 'Remove Bookmark' : 'Add Bookmark',
+              onPressed: _toggleBookmark,
+            ),
             // Advanced view toggle in AppBar
             TextButton.icon(
               onPressed: _toggleAdvancedView,
@@ -478,285 +481,264 @@ class _GitaVersePageState extends State<GitaVersePage> {
               ),
             ),
           ],
-
         ),
-        body: Stack(
-          children: [
-            Column(
+        body: onlyAudio
+          ? Center(
+              child: AudioPlayerWidget(
+                chapter: widget.verse.chapter.toString(),
+                shloka: widget.verse.shloka.toString(),
+                audioAssetPath: widget.verse.audioPath!,
+                verseText: widget.verse.sanskrit.replaceAll('\n', ' '),
+              ),
+            )
+          : Stack(
               children: [
-                // View selection row
-                Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Color(0xFFF8F9FA),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    children: _viewOptions.map((view) => 
-                      _buildViewOption(view),
-                    ).toList(),
-                  ),
-                ),
-                
-                // Main content - all in a single scrollable column
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Main verse card
-                        Card(
-                          elevation: 2,
-                          margin: const EdgeInsets.symmetric(vertical: 16.0),
-                          child: Column(
-                            children: [
-                              // Card header
-                              Container(
-                                padding: const EdgeInsets.all(16.0),
-
-                                // decoration: const BoxDecoration(
-                                //   color: _GitaVersePageState.cardBackgroundColor,
-                                //   border: Border(
-                                //     bottom: BorderSide(
-                                //       color: _GitaVersePageState.dividerColor,
-                                //       width: 1.0,
-                                //     ),
-                                //   ),
-                                // ),
-
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFFE0B2),
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: Color(0xFFE9ECEF),
-                                      width: 1.0,
+                Column(
+                  children: [
+                    // Advanced view controls - only show when in advanced mode
+                    if (_isAdvancedView)
+                      _buildAdvancedViewControls(),
+                    
+                    // Main content - all in a single scrollable column
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Main verse card
+                            Card(
+                              elevation: 2,
+                              margin: const EdgeInsets.symmetric(vertical: 16.0),
+                              child: Column(
+                                children: [
+                                  // Card header
+                                  Container(
+                                    padding: const EdgeInsets.all(16.0),
+                                    // decoration: const BoxDecoration(
+                                    //   color: _GitaVersePageState.cardBackgroundColor,
+                                    //   border: Border(
+                                    //     bottom: BorderSide(
+                                    //       color: _GitaVersePageState.dividerColor,
+                                    //       width: 1.0,
+                                    //     ),
+                                    //   ),
+                                    // ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
+                                          style: const TextStyle(
+                                            fontSize: _GitaVersePageState.fontSizeHeading,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: Icon(
+                                          _isBookmarked ? Icons.bookmark : Icons.bookmark_add_outlined,
+                                          color: _isBookmarked ? Colors.amber : _GitaVersePageState.primaryColor,
+                                          ),
+                                          onPressed: () async {
+                                          // Toggle bookmark status
+                                          setState(() {
+                                            // Toggle local bookmark state
+                                            _isBookmarked = !_isBookmarked;
+                                          });
+                                          
+                                          try {
+                                            // Get SharedPreferences instance
+                                            final prefs = await SharedPreferences.getInstance();
+                                              
+                                              // Create a unique key for this verse
+                                              final bookmarkKey = 'bookmark_${widget.verse.chapter}_${widget.verse.shloka}';
+                                              
+                                              // Save or remove bookmark based on state
+                                              if (_isBookmarked) {
+                                              await prefs.setBool(bookmarkKey, true);
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(
+                                                content: Text('Verse added to bookmarks'),
+                                                duration: Duration(seconds: 2),
+                                                ),
+                                              );
+                                              } else {
+                                              await prefs.remove(bookmarkKey);
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(
+                                                content: Text('Verse removed from bookmarks'),
+                                                duration: Duration(seconds: 2),
+                                                ),
+                                              );
+                                              }
+                                            } catch (e) {
+                                              debugPrint('Error saving bookmark: $e');
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Error updating bookmark'),
+                                                duration: Duration(seconds: 2),
+                                              ),
+                                              );
+                                            }
+                                            // },
+                                            // ScaffoldMessenger.of(context).showSnackBar(
+                                            //   const SnackBar(
+                                            //     content: Text('Bookmark feature coming soon'),
+                                            //   ),
+                                            // );
+                                          },
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
-                                      style: const TextStyle(
-
-                                        fontSize: _GitaVersePageState.fontSizeHeading,
-
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2C2C54),
-                                      ),
-                                    ),
-                                    IconButton(
-
-
-                                      icon: Icon(
-                                        isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                                        color: isBookmarked ? Colors.orange : Colors.white,
-                                      ),
-                                      onPressed: _toggleBookmark,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              
-                              // Card body - dynamic content based on visibility settings
-                              Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    // Sanskrit (Devanagari) section
-                                    if (_showDevanagari && widget.verse.sanskrit.isNotEmpty) 
-                                      _buildVerseSection(
-                                        'Devanagari',
-                                        widget.verse.sanskrit,
-                                        false, // Not interactive
-                                      ),
-                                    
-                                    if (_showDevanagari && _showTransliteration)
-                                      const SizedBox(height: 24.0),
-                                    
-                                    // Transliteration section with interactive words
-                                    if (_showTransliteration && widget.verse.english.isNotEmpty) 
-                                      _buildVerseSection(
-                                        'Verse Text (Transliteration)',
-                                        widget.verse.english,
-                                        true, // Interactive for hover tooltips
-                                      ),
-                                    
-                                    if (_showSynonyms)
-                                      const SizedBox(height: 24.0),
-                                    
-                                    // Word Meanings section
-                                    if (_showSynonyms && widget.verse.synonyms.isNotEmpty)
-                                     _buildExpandedSection(
-
-                                        'Synonyms',
-                                        _buildWordMeanings(),
-                                      ),
-                                    
-                                    if (_showTranslation)
-                                      const SizedBox(height: 24.0),
-                                    
-                                    // Translation section
-                                    if (_showTranslation && widget.verse.translation.isNotEmpty)
-                                      _buildExpandedSection(
-                                        'Translation',
-                                        Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Text(
-                                            widget.verse.translation,
-                                            style: const TextStyle(
-                                              fontSize: _GitaVersePageState.fontSizeBody, // Increased from 16 to 18
-                                              height: 1.6
+                                  
+                                  // Card body - dynamic content based on visibility settings
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        // Sanskrit (Devanagari) section
+                                        if (_showDevanagari && widget.verse.sanskrit.isNotEmpty) 
+                                          _buildVerseSection(
+                                            'Devanagari',
+                                            widget.verse.sanskrit,
+                                            false, // Not interactive
+                                          ),
+                                        
+                                        if (_showDevanagari && _showTransliteration)
+                                          const SizedBox(height: 24.0),
+                                        
+                                        // Transliteration section with interactive words
+                                        if (_showTransliteration && widget.verse.english.isNotEmpty) 
+                                          _buildVerseSection(
+                                            'Verse Text (Transliteration)',
+                                            widget.verse.english,
+                                            true, // Interactive for hover tooltips
+                                          ),
+                                        
+                                        if (_showSynonyms)
+                                          const SizedBox(height: 24.0),
+                                        
+                                        // Word Meanings section
+                                        if (_showSynonyms && widget.verse.synonyms.isNotEmpty)
+                                          _buildExpandedSection(
+                                            'Synonyms',
+                                            _buildWordMeanings(),
+                                          ),
+                                        
+                                        if (_showTranslation)
+                                          const SizedBox(height: 24.0),
+                                        
+                                        // Translation section
+                                        if (_showTranslation && widget.verse.translation.isNotEmpty)
+                                          _buildExpandedSection(
+                                            'Translation',
+                                            Padding(
+                                              padding: const EdgeInsets.all(16.0),
+                                              child: Text(
+                                                widget.verse.translation,
+                                                style: const TextStyle(
+                                                  fontSize: _GitaVersePageState.fontSizeBody, // Increased from 16 to 18
+                                                  height: 1.6
+                                                ),
+                                                textAlign: TextAlign.justify,
+                                              ),
                                             ),
-                                            textAlign: TextAlign.justify,
                                           ),
-                                        ),
-                                      ),
-                                    
-                                    if (_showPurport)
-                                      const SizedBox(height: 24.0),
-                                    
-                                    // Purport section
-                                    if (_showPurport && widget.verse.purport.isNotEmpty)
-                                      _buildExpandedSection(
-                                        'Purport',
-                                        Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Text(
-                                            widget.verse.purport,
-                                            style: const TextStyle(fontSize: _GitaVersePageState.fontSizeBody, height: 1.6), // Increased from 16 to 18
-                                            textAlign: TextAlign.justify,
+                                        
+                                        if (_showPurport)
+                                          const SizedBox(height: 24.0),
+                                        
+                                        // Purport section
+                                        if (_showPurport && widget.verse.purport.isNotEmpty)
+                                          _buildExpandedSection(
+                                            'Purport',
+                                            Padding(
+                                              padding: const EdgeInsets.all(16.0),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                children: widget.verse.purport
+                                                    .split('\n')
+                                                    .map((line) => Text(
+                                                          line,
+                                                          style: const TextStyle(
+                                                            fontSize: _GitaVersePageState.fontSizeBody,
+                                                            height: 1.6,
+                                                          ),
+                                                          textAlign: TextAlign.center,
+                                                        ))
+                                                    .toList(),
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
+                                      ],
+                                    ),
+                                  ),
+                                  
+                                  // Audio player section
+                                  if (widget.verse.audioPath != null)
+                                    AudioPlayerWidget(
+                                      chapter: widget.verse.chapter.toString(),
+                                      shloka: widget.verse.shloka.toString(),
+                                      audioAssetPath: 'assets/Audio/Bhagavad_gita_${widget.verse.chapter}.${widget.verse.shloka}.mp3',
+                                      verseText: widget.verse.english,
+                                    ),
+                                
+
+                                  _buildNavigationButtons(),
+                                ],
                               ),
-                              
-                              // Audio player section
-
-                              Container(
-                                padding: const EdgeInsets.all(16.0),
-                                // decoration: const BoxDecoration(
-                                //   color: _GitaVersePageState.cardBackgroundColor,
-                                //   border: Border(
-                                //     top: BorderSide(
-                                //       color: _GitaVersePageState.dividerColor,
-                                //       width: 1.0,
-                                //     ),
-                                //   ),
-                                // ),
-                                child: widget.verse.audioPath != null
-                                  ? _buildAudioPlayerControls()
-                                 : _buildAudioComingSoon(),
-                              ),
-
-                            ],
-                          ),
+                            ),        
+                          ],
                         ),
-                        
-                        // Navigation buttons
-                        _buildNavigationButtons(),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            
-            // Tooltip overlay
-            if (_tooltipVisible)
-              Positioned(
-                left: _tooltipPosition.dx,
-                top: _tooltipPosition.dy,
-                child: GestureDetector(
-                  onTap: _toggleTooltipLock,
-                  child: Container(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 0.7,
-                    ),
-                    padding: const EdgeInsets.all(12.0),
-
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 6.0,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: _tooltipLocked ? Color(0xFF2C2C54) : Colors.grey.shade300,
-                        width: 1.0,
                       ),
                     ),
-
-                    child: Text(
-                      _tooltipText,
-                      style: const TextStyle(fontSize: _GitaVersePageState.fontSizeCaption),
+                  ],
+                ),
+                
+                // Tooltip overlay
+                if (_tooltipVisible)
+                  Positioned(
+                    left: _tooltipPosition.dx,
+                    top: _tooltipPosition.dy,
+                    child: GestureDetector(
+                      onTap: _toggleTooltipLock,
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.7,
+                        ),
+                        padding: const EdgeInsets.all(12.0),
+                        // decoration: BoxDecoration(
+                        //   color: _GitaVersePageState.backgroundColor,
+                        //   borderRadius: BorderRadius.circular(8.0),
+                        //   boxShadow: [
+                        //     BoxShadow(
+                        //       color: Colors.black.withOpacity(0.2),
+                        //       blurRadius: 6.0,
+                        //       offset: const Offset(0, 2),
+                        //     ),
+                        //   ],
+                        //   border: Border.all(
+                        //     color: _tooltipLocked ? _GitaVersePageState.primaryColor : Colors.grey.shade300,
+                        //     width: 1.0,
+                        //   ),
+                        // ),
+                        child: Text(
+                          _tooltipText,
+                          style: const TextStyle(fontSize: _GitaVersePageState.fontSizeCaption),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-          ],
-        ),
+              ],
+            ),
       ),
     );
   }
-// <<<<<<< main
   
   // Build the advanced view controls with toggle switches
   Widget _buildAdvancedViewControls() {
-// =======
-
-//   Widget _buildViewOption(String view) {
-//     final isSelected = _selectedViews.contains(view);
-
-//     return GestureDetector(
-//       onTap: () {
-//         _updateVisibility(view);
-//       },
-//       child: Container(
-//         margin: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
-//         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-//         decoration: BoxDecoration(
-//           color: isSelected ? const Color(0xFF2C2C54) : Colors.grey.shade100,
-//           borderRadius: BorderRadius.circular(20.0),
-//           border: Border.all(
-//             color: isSelected ? const Color(0xFF2C2C54) : Colors.grey.shade300,
-//             width: 1.0,
-//           ),
-//         ),
-//         alignment: Alignment.center,
-//         child: Text(
-//           view,
-//           style: TextStyle(
-//             color: isSelected ? const Color(0xFFFF9933) : Colors.black87,
-//             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-//             fontSize: 14.0,
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-
-//   Widget _buildBreadcrumb() {
-// >>>>>>> main
     return Container(
       padding: const EdgeInsets.all(16.0),
       // decoration: BoxDecoration(
@@ -772,7 +754,6 @@ class _GitaVersePageState extends State<GitaVersePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-// <<<<<<< main
           const Text(
             'Show/Hide Sections',
             style: TextStyle(
@@ -801,47 +782,6 @@ class _GitaVersePageState extends State<GitaVersePage> {
                 setState(() => _showPurport = value);
               }),
             ],
-// =======
-//           TextButton(
-//             onPressed: () {
-//               Navigator.pop(context);
-//             },
-//             style: TextButton.styleFrom(
-//               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-//               minimumSize: Size.zero,
-//               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-//             ),
-//             child: const Text('Scriptures', style: TextStyle(color: Color(0xFF2C2C54))),
-//           ),
-//           const Text(' / ', style: TextStyle(color: Color(0xFF2C2C54))),
-//           TextButton(
-//             onPressed: () {
-//               Navigator.pop(context);
-//             },
-//             style: TextButton.styleFrom(
-//               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-//               minimumSize: Size.zero,
-//               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-//             ),
-//             child: const Text('Bhagavad Gita', style: TextStyle(color: Color(0xFF2C2C54))),
-//           ),
-//           const Text(' / ', style: TextStyle(color: Color(0xFF2C2C54))),
-//           TextButton(
-//             onPressed: () {
-//               Navigator.pop(context);
-//             },
-//             style: TextButton.styleFrom(
-//               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-//               minimumSize: Size.zero,
-//               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-//             ),
-//             child: Text('Chapter ${widget.verse.chapter}', style: TextStyle(color: Color(0xFF2C2C54))),
-//           ),
-//           const Text(' / ', style: TextStyle(color: Color(0xFF2C2C54))),
-//           Text(
-//             'Verse ${widget.verse.shloka}',
-//             style: const TextStyle(color: Color(0xFF2C2C54), fontWeight: FontWeight.bold),
-
           ),
         ],
       ),
@@ -875,7 +815,6 @@ class _GitaVersePageState extends State<GitaVersePage> {
             fontSize: _GitaVersePageState.fontSizeHeading,
             fontWeight: FontWeight.bold,
             color: _GitaVersePageState.primaryColor,
-
           ),
         ),
         const SizedBox(height: 12.0),
@@ -912,313 +851,369 @@ class _GitaVersePageState extends State<GitaVersePage> {
   }
 
   Widget _buildInteractiveLine(String line) {
-    final rawWords = line.split(RegExp(r"[ ’ ]")); // there is another ’ in the line so we need to split the line with space
-    final List<String> words = [];
-    final List<String?> meanings = [];
-    final Set<String> usedSynonyms = {};
-    final List<String> final_Words = [];
-    
-    // Process all words, including hyphenated ones
-    for (String rawWord in rawWords) {
-      if (rawWord.contains('-')) {
-        // Split hyphenated words
-        final parts = rawWord.split('-');
+    // Split the line into words, preserving punctuation
+    final rawWords = line.split(RegExp('(\\s+)'));
 
-        for (int i = 0; i < parts.length; i++) {
-          String part = parts[i];
-          // // Add hyphen back except for the last part
-          if (i==0) {
-            part = '$part-';
-          }
-          words.add(part);
-        }
-      } else if (rawWord.contains('\'')) {
-        // Handle words with apostrophes
-        final parts = rawWord.split('\'');
-        for (String part in parts) {
-          if (parts.indexOf(part) == 0) {
-            part =  "$part'";
-          }
-          words.add(part);
-        }
-      } else if (rawWord.contains(',')) {
-        // Handle words with commas
-        final parts = rawWord.split(',');
-        for (String part in parts) {
-          // add comma back except for the first part
-          if (parts.indexOf(part) == 0) {
-            part =  "$part,";
-          }
-          words.add(part);
-        }
-      }  else {
-        words.add(rawWord);
-      }
+    final List<Map<String, dynamic>> processedWords = [];
+
+    // Create a map of synonyms for easier lookup
+    final synonymMap = <String, String>{};
+    for (var entry in widget.verse.synonyms.entries) {
+      synonymMap[entry.key.toLowerCase()] = entry.value.meaning;
     }
-    
-    // Find meanings for each word
-    for (String word in words) {
-      String? meaning;
-      print('Word: $word');
-      
-      // Clean the word for comparison (remove punctuation)
-      String cleanWord = word;
-      // Check if this word has a synonym in the verse data
-      for (var entry in widget.verse.synonyms.entries) {
-        // Skip if this synonym key has already been used
-        if (usedSynonyms.contains(entry.key)) continue;
-        
-        String cleanKey = entry.key.toLowerCase();
-        print('$cleanKey $cleanWord');
-        // Check if t`he first 70 percent part of the word matches with first part of synonyms
-        if (cleanWord.length < 3 || cleanKey.length < 3) {
-          if (cleanWord == cleanKey) {
-            meaning = entry.value.meaning;
-            usedSynonyms.add(entry.key);
-            break;
 
-//   Widget _buildInteractiveLine(String line, bool isFullView) {
-//     final words = line.split(' ');
+    // Track which synonyms have already been matched in this line
+    final Set<String> usedSynonyms = {};
 
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(vertical: 4.0),
-//       child: Wrap(
-//         alignment: WrapAlignment.center,
-//         spacing: 4.0,
-//         runSpacing: 4.0,
-//         children: words.map((word) {
-//           String? meaning;
-//           for (var entry in widget.verse.synonyms.entries) {
-//             if (word.toLowerCase().contains(entry.key.toLowerCase()) ||
-//                 entry.key.toLowerCase().contains(word.toLowerCase())) {
-//               meaning = entry.value.meaning;
-//               break;
-//             }
-
-          }
-        } else if (cleanWord.startsWith(cleanKey.substring(0, (cleanKey.length * 0.5).round()))) {
-          meaning = entry.value.meaning;
-          usedSynonyms.add(entry.key);
-          break;
-        } 
-        else if (cleanWord.contains(cleanKey.substring(0, (cleanKey.length * 0.5).round()))) {
-          meaning = entry.value.meaning;
-          usedSynonyms.add(entry.key);
-          break;
-        }
-        else if (cleanKey.contains(cleanWord.substring(0, (cleanWord.length * 0.5).round()))) {
-          meaning = entry.value.meaning;
-          usedSynonyms.add(entry.key);
-          break;
-        }
-        else if (cleanKey.startsWith(cleanWord.substring(0, (cleanWord.length * 0.5).round()))) {
-          meaning = entry.value.meaning;
-          usedSynonyms.add(entry.key);
-          break;
-        }
-      }
-      
-      // // Check for custom meaning
-      // if (_customMeanings.containsKey(word)) {
-      //   meaning = _customMeanings[word];
-      // } else {
-      //   meaning ??= ' ';
-      // }
-      // if no meaning found then append the present word to previous word part and store the final word in a new list
-      if (meaning == null) {
-        // add the word to the previous word part
-        word = final_Words.isNotEmpty ? final_Words.last + word : word;
-        if (final_Words.isNotEmpty) {
-          final_Words.removeLast();
-        }
-        final_Words.add(word);
-      } else {
-        // add the word to the final words list
-        final_Words.add(word);
-      }
-      // Store the meaning in the list
-      meanings.add(meaning);
-
-        
+    // Process each word in the line
+    for (String rawWord in rawWords) {
+      if (rawWord.trim().isEmpty) continue;
+      final wordData = _processWordWithMeaningUnique(rawWord, synonymMap, usedSynonyms);
+      processedWords.addAll(wordData);
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1.0),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // First line: Display the original line with all words
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(bottom: 6.0),
-              child: Text(
-                line,
-                style: const TextStyle(
-                  fontSize: fontSizeSanskrit,
-                  color: textPrimaryColor,
-                  fontWeight: FontWeight.w500,
-
-//           return GestureDetector(
-//             onTapDown: (details) {
-//               if (meaning != null) {
-//                 final Offset position = details.globalPosition;
-//                 _showTooltip('$word: $meaning', Offset(position.dx, position.dy + 20));
-//               }
-//             },
-//             onTap: () {
-//               if (meaning != null) {
-//                 _toggleTooltipLock();
-//               }
-//             },
-//             child: Container(
-//               padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 2.0),
-//               decoration: BoxDecoration(
-//                 border: meaning != null
-//                     ? const Border(bottom: BorderSide(color: Color(0xFF2C2C54), width: 1.0))
-//                     : null,
-//               ),
-//               child: Text(
-//                 word,
-//                 style: TextStyle(
-//                   fontSize: isFullView ? 22 : 18,
-//                   color: meaning != null ? Color(0xFF2C2C54) : Colors.black87,
-
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            
-            // Second line: Meanings aligned with each word
-            SizedBox(
-              width: double.infinity,
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                runAlignment: WrapAlignment.start,
-                children: List.generate(final_Words.length, (index) {
-                  final word = final_Words[index];
-                  final meaning = meanings[index];
-                  
-                  // Calculate approximate width for word
-                  final wordWidth = (word.length * fontSizeSanskrit * 1).clamp(30.0, 200.0);
-                  
-                  return SizedBox(
-                    width: wordWidth,
-                    // padding: const EdgeInsets.only(right: 2.0),
-                    // margin: const EdgeInsets.only(bottom: 4.0),
-                    child: meaning != null ? Text(
-                      meaning,
-                      style: const TextStyle(
-                        fontSize: fontSizeMeaning,
-                        color: textSecondaryColor,
-                        fontStyle: FontStyle.italic,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: true,
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                    ) : const SizedBox.shrink( // If no meaning, show empty space
-                
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ],
-        ),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // First row: Display the original line
+          // Text(
+          //   line,
+          //   style: const TextStyle(
+          //     fontSize: fontSizeSanskrit,
+          //     color: textPrimaryColor,
+          //     fontWeight: FontWeight.w500,
+          //   ),
+          //   textAlign: TextAlign.center,
+          // ),
+          const SizedBox(height: 12.0),
+          // Second row: Word-by-word breakdown with meanings
+          _buildWordMeaningRow(processedWords),
+        ],
       ),
     );
+  }
+
+  // Process a single word and find its meaning(s), ensuring unique synonym usage and prioritizing longest match
+  List<Map<String, dynamic>> _processWordWithMeaningUnique(String rawWord, Map<String, String> synonymMap, Set<String> usedSynonyms) {
+    final List<Map<String, dynamic>> results = [];
+    String cleanWord = rawWord;
+    debugPrint('Processing word: $rawWord, Cleaned: $cleanWord');
+
+    // Try to match the longest possible synonym first
+    String? meaning = _findLongestWordMeaningUnique(cleanWord, synonymMap, usedSynonyms);
+    if (meaning != null) {
+      results.add({
+        'word': rawWord,
+        'meaning': meaning,
+        'cleanWord': cleanWord,
+      });
+    } else {
+      // Try to split compound words and match each part
+      final splitResults = _splitAndFindMeaningsUnique(rawWord, cleanWord, synonymMap, usedSynonyms);
+      results.addAll(splitResults);
+    }
+    return results;
+  }
+
+  // Find the longest matching synonym for a word, skipping already used synonyms
+  String? _findLongestWordMeaningUnique(String cleanWord, Map<String, String> synonymMap, Set<String> usedSynonyms) {
+    final lowerWord = cleanWord.toLowerCase();
+    String? bestKey;
+    int bestLength = 0;
+    // Check all unused synonyms for the longest match
+    for (var entry in synonymMap.entries) {
+      final synonymKey = entry.key.toLowerCase();
+      if (usedSynonyms.contains(synonymKey)) continue;
+      if (_wordsMatch(lowerWord, synonymKey) && synonymKey.length > bestLength) {
+        bestKey = synonymKey;
+        bestLength = synonymKey.length;
+      }
+    }
+    if (bestKey != null) {
+      usedSynonyms.add(bestKey);
+      return synonymMap[bestKey];
+    }
+    return null;
   }
   
-  // Add a method to show dialog to add a new meaning
-  void _showAddMeaningDialog(String word) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Add meaning for "$word"'),
-          content: TextField(
-            controller: _meaningController,
-            decoration: const InputDecoration(
-              hintText: 'Enter the meaning',
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 2,
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _meaningController.clear();
-              },
-              child: const Text('CANCEL'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _GitaVersePageState.primaryColor,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                if (_meaningController.text.isNotEmpty) {
-                  setState(() {
-                    _customMeanings[word] = _meaningController.text;
-                  });
-                  Navigator.pop(context);
-                  _meaningController.clear();
-                  
-                  // Show a confirmation snackbar
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Meaning added for "$word"'),
-                      backgroundColor: _GitaVersePageState.primaryColor,
-                    ),
-                  );
-                }
-              },
-              child: const Text('SAVE'),
-            ),
-          ],
-        );
-      },
-    );
+  // Find word meaning, accepting any match not just the longest
+  String? _findWordMeaningUnique(String cleanWord, Map<String, String> synonymMap, Set<String> usedSynonyms) {
+    final lowerWord = cleanWord.toLowerCase();
+    
+    // Check all unused synonyms for any match
+    for (var entry in synonymMap.entries) {
+      final synonymKey = entry.key.toLowerCase();
+      if (usedSynonyms.contains(synonymKey)) continue;
+      if (_wordsMatch(lowerWord, synonymKey)) {
+        usedSynonyms.add(synonymKey);
+        return synonymMap[synonymKey];
+      }
+    }
+    return null;
   }
 
+  // Split compound words and find meanings for each part, ensuring unique synonym usage
+  List<Map<String, dynamic>> _splitAndFindMeaningsUnique(String originalWord, String cleanWord, Map<String, String> synonymMap, Set<String> usedSynonyms) {
+    final List<Map<String, dynamic>> results = [];
+    List<String> parts = [];
+    if (cleanWord.contains('-')) {
+      parts = cleanWord.split('-');
+    } else {
+      parts = _intelligentWordSplit(cleanWord, synonymMap);
+    }
+    if (parts.length > 1) {
+      String remainingOriginal = originalWord;
+      for (int i = 0; i < parts.length; i++) {
+        String part = parts[i];
+        String? meaning = _findWordMeaningUnique(part, synonymMap, usedSynonyms);
+        String displayPart = _extractDisplayPart(remainingOriginal, part, i == parts.length - 1);
+        results.add({
+          'word': displayPart,
+          'meaning': meaning,
+          'cleanWord': part,
+          'isPart': true,
+        });
+        remainingOriginal = remainingOriginal.replaceFirst(displayPart.replaceAll(RegExp(r'[^\w\-]'), ''), '');
+      }
+    } else {
+      results.add({
+        'word': originalWord,
+        'meaning': null,
+        'cleanWord': cleanWord,
+      });
+    }
+    return results;
+  }
 
-  Widget _buildExpandedSection(String title, Widget content) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      shape: RoundedRectangleBorder(
-        side: const BorderSide(color: _GitaVersePageState.dividerColor),
-        borderRadius: BorderRadius.circular(4.0),
-      ),
-      elevation: 0,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  // Intelligent word splitting based on synonym patterns
+  List<String> _intelligentWordSplit(String word, Map<String, String> synonymMap) {
+    // Look for patterns in synonyms that might help split this word
+    for (var synonymKey in synonymMap.keys) {
+      final cleanSynonym = synonymKey.toLowerCase().replaceAll(RegExp(r'[^\w]'), '');
+      
+      if (word.toLowerCase().contains(cleanSynonym) || cleanSynonym.contains(word.toLowerCase())) {
+        // Try to find where this word might split based on the synonym
+        if (synonymKey.contains('-')) {
+          final synonymParts = synonymKey.split('-');
+          return _trySplitBasedOnPattern(word, synonymParts);
+        }
+      }
+    }
+    
+    // If no pattern found, return the word as is
+    return [word];
+  }
+
+  // Try to split a word based on a pattern from synonyms
+  List<String> _trySplitBasedOnPattern(String word, List<String> pattern) {
+    final List<String> result = [];
+    String remaining = word.toLowerCase();
+    
+    for (String patternPart in pattern) {
+      final cleanPattern = patternPart.toLowerCase().replaceAll(RegExp(r'[^\w]'), '');
+      
+      if (remaining.startsWith(cleanPattern)) {
+        result.add(word.substring(0, cleanPattern.length));
+        word = word.substring(cleanPattern.length);
+        remaining = remaining.substring(cleanPattern.length);
+      } else if (remaining.contains(cleanPattern)) {
+        final index = remaining.indexOf(cleanPattern);
+        if (index > 0) {
+          result.add(word.substring(0, index));
+          word = word.substring(index);
+          remaining = remaining.substring(index);
+        }
+        result.add(word.substring(0, cleanPattern.length));
+        word = word.substring(cleanPattern.length);
+        remaining = remaining.substring(cleanPattern.length);
+      }
+    }
+    
+    if (word.isNotEmpty) {
+      result.add(word);
+    }
+    
+    return result.isEmpty ? [word] : result;
+  }
+
+  // Extract the display part from original word
+  String _extractDisplayPart(String originalWord, String cleanPart, bool isLast) {
+    final cleanOriginal = originalWord.replaceAll(RegExp(r'[^\w\-]'), '').toLowerCase();
+    final cleanPartLower = cleanPart.toLowerCase();
+    
+    final index = cleanOriginal.indexOf(cleanPartLower);
+    if (index >= 0) {
+      int endIndex = index + cleanPart.length;
+      if (isLast) {
+        endIndex = originalWord.length;
+      }
+      return originalWord.substring(index, endIndex.clamp(0, originalWord.length));
+    }
+    
+    return cleanPart;
+  }
+
+  // Check if two words match using various strategies
+  bool _wordsMatch(String word1, String word2) {
+    if (word1 == word2) return true;
+    
+    // Remove common diacritical variations
+    String normalized1 = _normalizeSanskrit(word1);
+    String normalized2 = _normalizeSanskrit(word2);
+    
+    if (normalized1 == normalized2) return true;
+    
+    // Check if one is a substring of the other (minimum 3 characters)
+    if (word1.length >= 3 && word2.length >= 3) {
+      if (word1.contains(word2) || word2.contains(word1)) return true;
+    }
+    
+    // Check prefix matching (70% rule)
+    final minLength = (word1.length * 0.7).round();
+    if (word1.length >= 3 && word2.length >= 3 && minLength >= 2) {
+      if (word1.substring(0, minLength.clamp(0, word1.length)) == 
+          word2.substring(0, minLength.clamp(0, word2.length))) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  // Normalize Sanskrit transliteration
+  String _normalizeSanskrit(String word) {
+    return word
+        .replaceAll('ā', 'a')
+        .replaceAll('ī', 'i')
+        .replaceAll('ū', 'u')
+        .replaceAll('ṛ', 'r')
+        .replaceAll('ṝ', 'r')
+        .replaceAll('ḷ', 'l')
+        .replaceAll('ṃ', 'm')
+        .replaceAll('ḥ', 'h')
+        .replaceAll('ñ', 'n')
+        .replaceAll('ṅ', 'n')
+        .replaceAll('ṇ', 'n')
+        .replaceAll('ṭ', 't')
+        .replaceAll('ḍ', 'd')
+        .replaceAll('ś', 's')
+        .replaceAll('ṣ', 's');
+  }
+
+  // Build the word-meaning display row
+  Widget _buildWordMeaningRow(List<Map<String, dynamic>> processedWords) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8.0,
+      runSpacing:4.0,
+      children: processedWords.map((wordData) {
+        final word = wordData['word'] as String;
+        final meaning = wordData['meaning'] as String?;
+        final isPart = wordData['isPart'] as bool? ?? false;
+        final customMeaning = _customMeanings[word];
+        return GestureDetector(
+          onDoubleTap: () => _addOrEditCustomMeaning(word, customMeaning ?? meaning),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 2.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            decoration: BoxDecoration(
+              color: (customMeaning != null || meaning != null) ? Colors.orange.shade50 : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(
+                color: (customMeaning != null || meaning != null) ? Colors.orange.shade200 : Colors.grey.shade300,
+                width: 0.1,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      word,
+                      style: TextStyle(
+                        fontSize: isPart ? fontSizeMeaning + 2 : fontSizeMeaning + 4,
+                        fontWeight: FontWeight.w600,
+                        color: (customMeaning != null || meaning != null) ? Colors.orange.shade800 : Colors.grey.shade600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    // const SizedBox(width: 2),
+                    // GestureDetector(
+                    //   onTap: () => _addOrEditCustomMeaning(word, customMeaning ?? meaning),
+                    //   child: const Icon(Icons.edit, size: 14, color: Colors.blueGrey),
+                    // ),
+                  ],
+                ),
+                const SizedBox(height: 2.0),
                 Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: _GitaVersePageState.fontSizeHeading,
-                    fontWeight: FontWeight.bold,
-                    color: _GitaVersePageState.primaryColor,
-
+                  customMeaning ?? meaning ?? '?',
+                  style: TextStyle(
+                    fontSize: fontSizeMeaning,
+                    color: customMeaning != null
+                        ? Colors.blue.shade700
+                        : (meaning != null ? Colors.grey.shade700 : Colors.grey.shade400),
+                    fontStyle: FontStyle.italic,
                   ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          const Divider(color: _GitaVersePageState.dividerColor, height: 1),
-          content,
+        );
+      }).toList(),
+    );
+  }
+
+  Future<void> _loadCustomMeanings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keyPrefix = _customMeaningPrefix();
+    final keys = prefs.getKeys().where((k) => k.startsWith(keyPrefix));
+    final map = <String, String>{};
+    for (final k in keys) {
+      final word = k.substring(keyPrefix.length);
+      final value = prefs.getString(k);
+      if (value != null) map[word] = value;
+    }
+    setState(() {
+      _customMeanings = map;
+    });
+  }
+
+  String _customMeaningPrefix() {
+    return 'custom_meaning_${widget.verse.chapter}_${widget.verse.shloka}_';
+  }
+
+  Future<void> _addOrEditCustomMeaning(String word, String? currentMeaning) async {
+    final controller = TextEditingController(text: currentMeaning ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Add/Edit Meaning for "$word"'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Enter custom meaning'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Save')),
         ],
       ),
     );
+    if (result != null && result.isNotEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _customMeaningPrefix() + word;
+      await prefs.setString(key, result);
+      setState(() {
+        _customMeanings[word] = result;
+      });
+    }
   }
 
   Widget _buildWordMeanings() {
@@ -1226,280 +1221,315 @@ class _GitaVersePageState extends State<GitaVersePage> {
       return const Padding(
         padding: EdgeInsets.all(16.0),
         child: Text(
-          'Word-by-word meanings are not available for this verse.',
-          style: TextStyle(fontSize: _GitaVersePageState.fontSizeBody),
+          'No word meanings available for this verse.',
+          style: TextStyle(
+            fontSize: fontSizeCaption,
+            color: textSecondaryColor,
+            fontStyle: FontStyle.italic,
+          ),
+          textAlign: TextAlign.center,
         ),
       );
     }
 
-    // Create a single string with the format:
-    // sanskrit1 — meaning1; sanskrit2 — meaning2; ...
-    String formattedMeanings = '';
-    widget.verse.synonyms.entries.forEach((entry) {
-      if (formattedMeanings.isNotEmpty) {
-        formattedMeanings += '; ';
+    // Create a single paragraph with all word meanings
+    final List<InlineSpan> spans = [];
+    final entries = widget.verse.synonyms.entries.toList();
+    
+    for (int i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      
+      // Add the word in bold
+      spans.add(
+        TextSpan(
+          text: entry.key,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: primaryColor,
+          ),
+        ),
+      );
+      
+      // Add the dash separator
+      spans.add(
+        const TextSpan(
+          text: ' — ',
+          style: TextStyle(
+            color: textPrimaryColor,
+          ),
+        ),
+      );
+      
+      // Add the meaning
+      spans.add(
+        TextSpan(
+          text: entry.value.meaning,
+          style: const TextStyle(
+            color: textPrimaryColor,
+          ),
+        ),
+      );
+      
+      // Add semicolon separator if not the last entry
+      if (i < entries.length - 1) {
+        spans.add(
+          const TextSpan(
+            text: '; ',
+            style: TextStyle(
+              color: textPrimaryColor,
+            ),
+          ),
+        );
       }
-      formattedMeanings += '${entry.key} — ${entry.value.meaning}';
-    });
+    }
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Text(
-        formattedMeanings,
-        style: const TextStyle(
-          fontSize: _GitaVersePageState.fontSizeBody,
-          height: 1.6,
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            fontSize: fontSizeCaption,
+            color: textPrimaryColor,
+            height: 1.4,
+          ),
+          children: spans,
         ),
         textAlign: TextAlign.justify,
       ),
     );
   }
-  
-  // Build navigation buttons
-  Widget _buildNavigationButtons() {
-    bool isFirst = _isFirstVerse();
-    bool isLast = _isLastVerse();
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Previous verse button - left side
-          if (!isFirst)
-            ElevatedButton.icon(
-              onPressed: _navigateToPreviousVerse,
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('Previous Verse'),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white, // Fix: Set text color to white
-                backgroundColor: _GitaVersePageState.primaryColor,
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-              ),
-            ), // Add ripple effect for better feedback
-          // Spacer when only one button is shown
-          if (isFirst && !isLast || !isFirst && isLast)
-            const Spacer(),
-          // Next verse button - right side
-          if (!isLast)
-            _addRippleEffect(
-              ElevatedButton.icon(
-                onPressed: _navigateToNextVerse,
-                icon: const Icon(Icons.arrow_forward),
-                label: const Text('Next Verse'),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white, 
-                  backgroundColor: _GitaVersePageState.primaryColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
 
-//       padding: EdgeInsets.all(isFullView ? 0.0 : 16.0),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: widget.verse.synonyms.entries.map((entry) {
-//           return Container(
-//             margin: const EdgeInsets.only(bottom: 16.0),
-//             padding: const EdgeInsets.all(12.0),
-//             decoration: BoxDecoration(
-//               color: isFullView ? Colors.grey.shade50 : null,
-//               borderRadius: isFullView ? BorderRadius.circular(8.0) : null,
-//               border: isFullView ? Border.all(color: Colors.grey.shade200) : null,
-//             ),
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Text(
-//                   entry.key,
-//                   style: TextStyle(
-//                     fontWeight: FontWeight.bold,
-//                     fontSize: isFullView ? 18 : 16,
-//                     color: Color(0xFF2C2C54),
-//                   ),
-//                 ),
-//                 const SizedBox(height: 8.0),
-//                 Row(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Text(
-//                       "Word: ",
-//                       style: TextStyle(
-//                         fontWeight: FontWeight.bold,
-//                         fontSize: isFullView ? 16 : 14,
-//                         color: Colors.grey.shade800,
-//                       ),
-//                     ),
-//                     Expanded(
-//                       child: Text(
-//                         entry.value.versetext,
-//                         style: TextStyle(
-//                           fontSize: isFullView ? 16 : 14,
-//                         ),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//                 const SizedBox(height: 4.0),
-//                 Row(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Text(
-//                       "Meaning: ",
-//                       style: TextStyle(
-//                         fontWeight: FontWeight.bold,
-//                         fontSize: isFullView ? 16 : 14,
-//                         color: Colors.grey.shade800,
-//                       ),
-//                     ),
-//                     Expanded(
-//                       child: Text(
-//                         entry.value.meaning,
-//                         style: TextStyle(
-//                           fontSize: isFullView ? 16 : 14,
-//                         ),
-//                       ),
-//                     ),
-//                   ],
+  Widget _buildExpandedSection(String title, Widget content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.1),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(8.0),
+              topRight: Radius.circular(8.0),
+            ),
+          ),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: fontSizeSubheading,
+              fontWeight: FontWeight.bold,
+              color: primaryColor,
+            ),
+          ),
+        ),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            border: Border.all(color: dividerColor),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(8.0),
+              bottomRight: Radius.circular(8.0),
+            ),
+          ),
+          child: content,
+        ),
+      ],
+    );
+  }
 
+  Widget _buildAudioPlayerControls() {
+    return Column(
+      children: [
+        // Error message display
+        if (_errorMessage != null)
+          Container(
+            padding: const EdgeInsets.all(12.0),
+            margin: const EdgeInsets.only(bottom: 12.0),
+            decoration: BoxDecoration(
+              color: errorColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(color: errorColor.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, color: errorColor, size: 20),
+                const SizedBox(width: 8.0),
+                Expanded(
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(
+                      color: errorColor,
+                      fontSize: fontSizeCaption,
+                    ),
+                  ),
                 ),
-              )
-            ), // Add ripple effect for better feedback
+              ],
+            ),
+          ),
+        
+        // Main audio controls
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Play/Pause button
+            Container(
+              decoration: BoxDecoration(
+                color: primaryColor,
+                borderRadius: BorderRadius.circular(50.0),
+              ),
+              child: IconButton(
+                onPressed: _isLoading ? null : _playAudio,
+                icon: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Icon(
+                        isPlaying ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+              ),
+            ),
+            
+            const SizedBox(width: 16.0),
+            
+            // Time display
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_formatTime(_position)} / ${_formatTime(_duration)}',
+                  style: const TextStyle(
+                    fontSize: fontSizeCaption,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4.0),
+                Container(
+                  width: 200,
+                  child: LinearProgressIndicator(
+                    value: _duration.inMilliseconds > 0
+                        ? _position.inMilliseconds / _duration.inMilliseconds
+                        : 0.0,
+                    backgroundColor: Colors.grey.shade300,
+                    valueColor: const AlwaysStoppedAnimation<Color>(primaryColor),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        
+        // Audio path debug info (only in debug mode)
+        if (widget.verse.audioPath != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Audio: ${widget.verse.audioPath}',
+              style: TextStyle(
+                fontSize: fontSizeSmall,
+                color: textSecondaryColor,
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAudioComingSoon() {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.music_note, color: Colors.grey.shade600),
+          const SizedBox(width: 8.0),
+          Text(
+            'Audio recitation coming soon',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: fontSizeCaption,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
         ],
       ),
     );
   }
-  
-  // Helper method to add ripple effect to buttons
-  Widget _addRippleEffect(Widget widget) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        splashColor: Colors.white.withAlpha(77),
-        highlightColor: Colors.white.withAlpha(26),
-        child: widget,
+
+  Widget _buildNavigationButtons() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Previous verse button
+          ElevatedButton.icon(
+            onPressed: _isFirstVerse() ? null : _navigateToPreviousVerse,
+            icon: const Icon(Icons.arrow_back),
+            label: const Text('Previous'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.grey.shade300,
+              disabledForegroundColor: Colors.grey.shade600,
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+            ),
+          ),
+          
+          // Next verse button
+          ElevatedButton.icon(
+            onPressed: _isLastVerse() ? null : _navigateToNextVerse,
+            icon: const Icon(Icons.arrow_forward),
+            label: const Text('Next'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.grey.shade300,
+              disabledForegroundColor: Colors.grey.shade600,
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+            ),
+          ),
+        ],
       ),
     );
   }
-  
-  Widget _buildAudioPlayerControls() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const Text(
-          'Audio Recitation',
-          style: TextStyle(
-            fontSize: _GitaVersePageState.fontSizeHeading,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2C2C54),
-          ),
-        ),
-        const SizedBox(height: 16.0),
-        Row(
-          children: [
-            IconButton(
-              onPressed: _isLoading ? null : _playAudio,
-              icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled),
-              iconSize: 48.0,
-              color: _GitaVersePageState.primaryColor,
-              disabledColor: _GitaVersePageState.textSecondaryColor,
 
-            ),
-            const SizedBox(width: 8.0),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: Color(0xFF2C2C54),
-                      inactiveTrackColor: Colors.grey.shade300,
-                      thumbColor: Color(0xFF2C2C54),
-                      overlayColor: Colors.deepPurple.withOpacity(0.2),
-                      trackHeight: 4.0,
-                    ),
-                    child: Slider(
-                      min: 0,
-                      max: _duration.inSeconds.toDouble(),
-                      value: _position.inSeconds.toDouble(),
-                      onChanged: (value) async {
-                        await _audioPlayer.seek(Duration(seconds: value.toInt()));
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _formatTime(_position),
-                          style: const TextStyle(
-                            color: _GitaVersePageState.textSecondaryColor,
-                            fontSize: _GitaVersePageState.fontSizeSmall,
-                          ),
-                        ),
-                        Text(
-                          _formatTime(_duration),
-                          style: const TextStyle(
-                            color: _GitaVersePageState.textSecondaryColor,
-                            fontSize: _GitaVersePageState.fontSizeSmall,
-                          ),
-                        ),
-
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        if (_isLoading)
-          const Padding(
-            padding: EdgeInsets.only(top: 8.0),
-            child: Text(
-              'Loading audio...',
-              style: TextStyle(
-                color: _GitaVersePageState.textSecondaryColor,
-                fontSize: _GitaVersePageState.fontSizeCaption,
-              ),
-            ),
-          ),
-        if (_errorMessage != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(
-              _errorMessage!,
-              style: const TextStyle(
-                color: _GitaVersePageState.errorColor,
-                fontSize: _GitaVersePageState.fontSizeCaption,
-              ),
-            ),
-          ),
-      ],
-    );
+  Future<void> _checkBookmark() async {
+    final id = "${widget.verse.chapter}:${widget.verse.shloka}";
+    final bookmarked = await BookmarkManager.isBookmarked(id);
+    setState(() {
+      _isBookmarked = bookmarked;
+    });
   }
-  
-  Widget _buildAudioComingSoon() {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          'Audio Recitation',
-          style: TextStyle(
-            fontSize: _GitaVersePageState.fontSizeHeading,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        SizedBox(height: 16.0),
-        Text(
-          'Audio recitation coming soon for this verse.',
-          style: TextStyle(
-            color: _GitaVersePageState.textSecondaryColor,
-            fontSize: _GitaVersePageState.fontSizeCaption,
-          ),
-        ),
-      ],
-    );
+
+  Future<void> _toggleBookmark() async {
+    final id = "${widget.verse.chapter}:${widget.verse.shloka}";
+    if (_isBookmarked) {
+      await BookmarkManager.removeBookmark(id);
+      setState(() => _isBookmarked = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Verse removed from bookmarks'), duration: Duration(seconds: 2)),
+      );
+    } else {
+      await BookmarkManager.addBookmark(id);
+      setState(() => _isBookmarked = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Verse added to bookmarks'), duration: Duration(seconds: 2)),
+      );
+    }
   }
 }
 

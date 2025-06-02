@@ -113,7 +113,7 @@ class _BookmarkChapterPageState extends State<BookmarkChapterPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Verse ${verse.shloka}',
+                    'Verse ${verse}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -121,7 +121,7 @@ class _BookmarkChapterPageState extends State<BookmarkChapterPage> {
                     ),
                   ),
                   // Audio indicator if verse has audio
-                  if (verse.audioPaths.isNotEmpty)
+                  if (verse.audioPath?.isNotEmpty == true)
                     const Icon(Icons.audiotrack, color: Color(0xFF2C2C54)),
                 ],
               ),

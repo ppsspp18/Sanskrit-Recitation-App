@@ -5,10 +5,27 @@ import 'package:provider/provider.dart';
 import 'package:sanskrit_racitatiion_project/theme/theme_provider.dart';
 import 'package:sanskrit_racitatiion_project/widgets/global_audio_player.dart';
 import 'package:sanskrit_racitatiion_project/audio/audio_provider.dart';
+// import 'package:firebase_core/firebase_core.dart';
+// import 'package:sanskrit_racitatiion_project/firebase_options.dart';
 
-void main() {
+Future<void> main() async {
+  // Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // // Initialize Firebase with error handling
+  // try {
+  //   await Firebase.initializeApp(
+  //     options: DefaultFirebaseOptions.currentPlatform,
+  //   );
+  //   debugPrint('Firebase initialized successfully');
+  // } catch (e) {
+  //   debugPrint('Failed to initialize Firebase: $e');
+  //   // Continue anyway, as the app might work without Firebase
+  // }
+
   // Initialize AudioPlayer global settings
   AudioCache.instance = AudioCache(prefix: '');
+  
   runApp(
     MultiProvider(
       providers: [
@@ -47,5 +64,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-

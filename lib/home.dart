@@ -78,10 +78,10 @@ class _HomePageState extends State<HomePage> {
         child: GridView.builder(
           itemCount: chapterIds.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, // More columns
+            crossAxisCount: 2, // More columns
             crossAxisSpacing: 12, // More space between columns
             mainAxisSpacing: 12, // More space between rows
-            childAspectRatio: 3.5,
+            childAspectRatio: 0.8, // Adjusted aspect ratio for better fit
 
           ),
           itemBuilder: (context, index) {
