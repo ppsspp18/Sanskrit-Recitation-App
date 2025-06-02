@@ -25,6 +25,7 @@ class GitaVersePage extends StatefulWidget {
 class _GitaVersePageState extends State<GitaVersePage> {
   // Services
   final WordMeaningService _wordMeaningService = WordMeaningService();
+  Set<String> _bookmarkedVerseIds = {};
   
   // UI Constants for consistent theming
   // Colors
@@ -82,6 +83,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
     super.initState();
     _loadCustomMeanings();
     _checkBookmark();
+    _loadBookmarks();
+
     index = widget.verses.indexWhere((v) => v.shloka == widget.verse.shloka);
     if (index == -1) index = 0; // fallback in case of no match
     
@@ -91,6 +94,27 @@ class _GitaVersePageState extends State<GitaVersePage> {
     // Set up audio player if audio path is available
     if (widget.verse.audioPath != null) {
       _setupAudioPlayer();
+    }
+  }
+
+  Future<void> _loadBookmarks() async {
+    final ids = await BookmarkManager.getBookmarks();
+    setState(() {
+      _bookmarkedVerseIds = ids.toSet();
+    });
+  }
+
+  void _toggleBookmark(String id) async {
+    if (_bookmarkedVerseIds.contains(id)) {
+      await BookmarkManager.removeBookmark(id);
+      setState(() {
+        _bookmarkedVerseIds.remove(id);
+      });
+    } else {
+      await BookmarkManager.addBookmark(id);
+      setState(() {
+        _bookmarkedVerseIds.add(id);
+      });
     }
   }
 
@@ -339,6 +363,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
   Widget build(BuildContext context) {
     final onlyAudio = (widget.verse.audioPath != null && widget.verse.audioPath!.isNotEmpty)
       && (widget.verse.sanskrit.isEmpty && widget.verse.english.isEmpty && (widget.verse.synonyms == null || widget.verse.synonyms.isEmpty) && widget.verse.translation.isEmpty && widget.verse.purport.isEmpty);
+    final chapter = widget.verse.chapter.toString();
+    final shloka = widget.verse.shloka.toString();
+    final verseId = "$chapter:$shloka";
+    final isBookmarked = _bookmarkedVerseIds.contains(verseId);
     return GestureDetector(
       onTap: () {
         if (_tooltipLocked) {
@@ -373,11 +401,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
           actions: [
             IconButton(
               icon: Icon(
-                _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                color: _isBookmarked ? Colors.amber : Colors.white,
+                isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                color: isBookmarked ? Color(0xFF2C2C54) : Color(0xFF2C2C54),
               ),
-              tooltip: _isBookmarked ? 'Remove Bookmark' : 'Add Bookmark',
-              onPressed: _toggleBookmark,
+              onPressed: () => _toggleBookmark(verseId),
             ),
             // Advanced view toggle in AppBar
             TextButton.icon(
@@ -447,57 +474,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                         ),
                                         IconButton(
                                           icon: Icon(
-                                          _isBookmarked ? Icons.bookmark : Icons.bookmark_add_outlined,
-                                          color: _isBookmarked ? Colors.amber : _GitaVersePageState.primaryColor,
+                                            isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                                            color: isBookmarked ? Color(0xFF2C2C54) : Color(0xFF2C2C54),
                                           ),
-                                          onPressed: () async {
-                                          // Toggle bookmark status
-                                          setState(() {
-                                            // Toggle local bookmark state
-                                            _isBookmarked = !_isBookmarked;
-                                          });
-                                          
-                                          try {
-                                            // Get SharedPreferences instance
-                                            final prefs = await SharedPreferences.getInstance();
-                                              
-                                              // Create a unique key for this verse
-                                              final bookmarkKey = 'bookmark_${widget.verse.chapter}_${widget.verse.shloka}';
-                                              
-                                              // Save or remove bookmark based on state
-                                              if (_isBookmarked) {
-                                              await prefs.setBool(bookmarkKey, true);
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                content: Text('Verse added to bookmarks'),
-                                                duration: Duration(seconds: 2),
-                                                ),
-                                              );
-                                              } else {
-                                              await prefs.remove(bookmarkKey);
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                content: Text('Verse removed from bookmarks'),
-                                                duration: Duration(seconds: 2),
-                                                ),
-                                              );
-                                              }
-                                            } catch (e) {
-                                              debugPrint('Error saving bookmark: $e');
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Error updating bookmark'),
-                                                duration: Duration(seconds: 2),
-                                              ),
-                                              );
-                                            }
-                                            // },
-                                            // ScaffoldMessenger.of(context).showSnackBar(
-                                            //   const SnackBar(
-                                            //     content: Text('Bookmark feature coming soon'),
-                                            //   ),
-                                            // );
-                                          },
+                                          onPressed: () => _toggleBookmark(verseId),
                                         ),
                                       ],
                                     ),
@@ -1427,22 +1407,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     });
   }
 
-  Future<void> _toggleBookmark() async {
-    final id = "${widget.verse.chapter}:${widget.verse.shloka}";
-    if (_isBookmarked) {
-      await BookmarkManager.removeBookmark(id);
-      setState(() => _isBookmarked = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Verse removed from bookmarks'), duration: Duration(seconds: 2)),
-      );
-    } else {
-      await BookmarkManager.addBookmark(id);
-      setState(() => _isBookmarked = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Verse added to bookmarks'), duration: Duration(seconds: 2)),
-      );
-    }
-  }
+
 }
 
 // unused functions

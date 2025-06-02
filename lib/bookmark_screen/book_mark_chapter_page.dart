@@ -3,8 +3,6 @@ import 'package:sanskrit_racitatiion_project/verse_page/verse_detail_screen.dart
 import 'package:sanskrit_racitatiion_project/verse_page/verse_repository.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-//import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart';
-//import 'package:sanskrit_racitatiion_project/book_mark.dart';
 
 class BookmarkChapterPage extends StatefulWidget {
   final String chapterId;
@@ -113,7 +111,7 @@ class _BookmarkChapterPageState extends State<BookmarkChapterPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Verse ${verse}',
+                    'Verse ${verse.shloka}',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
