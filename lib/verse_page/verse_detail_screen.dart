@@ -7,12 +7,14 @@ import 'package:sanskrit_racitatiion_project/bookmark_screen/bookmark_manager.da
 import 'package:sanskrit_racitatiion_project/verse_page/audio_player_widget.dart';
 
 class GitaVersePage extends StatefulWidget {
-  final Verse_1 verse;
+  final List<Verse_1> verses; // List of verses in the chapter
+  final Verse_1 verse;// Current index of the verse in the chapter
   final void Function(bool)? onNavigate; // Callback for navigation
   
   const GitaVersePage({
-    super.key, 
-    required this.verse, 
+    super.key,
+    required this.verses,
+    required this.verse,
     this.onNavigate,
   });
 
@@ -26,8 +28,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
   
   // UI Constants for consistent theming
   // Colors
-  static const Color primaryColor = Colors.deepOrangeAccent;
-  static const Color dividerColor = Color(0xFFE9ECEF);
+  static const Color primaryColor = Color(0xFF2C2C54);
+  static const Color dividerColor = Color(0xFFFF9933);
   static const Color textPrimaryColor = Colors.black;
   static const Color textSecondaryColor = Colors.grey;
   static const Color errorColor = Colors.red;
@@ -72,11 +74,16 @@ class _GitaVersePageState extends State<GitaVersePage> {
   // Custom meanings storage
   Map<String, String> _customMeanings = {};
 
+  late int index;
+  late Verse_1 verse;
+
   @override
   void initState() {
     super.initState();
     _loadCustomMeanings();
     _checkBookmark();
+    index = widget.verses.indexWhere((v) => v.shloka == widget.verse.shloka);
+    if (index == -1) index = 0; // fallback in case of no match
     
     // Load word meanings for the verse
     // _loadWordMeanings();
@@ -84,44 +91,6 @@ class _GitaVersePageState extends State<GitaVersePage> {
     // Set up audio player if audio path is available
     if (widget.verse.audioPath != null) {
       _setupAudioPlayer();
-    }
-  }
-
-  void _loadWordMeanings() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
-      
-      // Check if word meanings are already processed and stored
-      final lines = widget.verse.english.split('\n');
-      
-      for (String line in lines) {
-        if (line.trim().isEmpty) continue;
-        
-        // Try to get pre-processed meanings for this line
-        final processedWords = await _wordMeaningService.getVerseWordMeanings(
-          widget.verse.chapter, 
-          widget.verse.shloka, 
-          line
-        );
-        
-        if (processedWords == null || processedWords.isEmpty) {
-          // Process and store meanings for this verse
-          await _wordMeaningService.processAndStoreVerseMeanings(widget.verse);
-        }
-      }
-      
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint('Error loading word meanings: $e');
-      setState(() {
-        _errorMessage = 'Error loading word meanings';
-        _isLoading = false;
-      });
     }
   }
 
@@ -330,98 +299,40 @@ class _GitaVersePageState extends State<GitaVersePage> {
   }
 
   // Navigate to previous verse
+
   void _navigateToPreviousVerse() {
-    if (_hasNavigationCallback()) {
-      widget.onNavigate!(false);
-    } else {
-      _fallbackNavigation();
+    if(index >0){
+      final verse = widget.verses[index-1];
+      final verses = widget.verses;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GitaVersePage(verses: verses, verse: verse),
+        ),
+      );
     }
   }
 
   // Navigate to next verse
   void _navigateToNextVerse() {
-    if (_isLastVerse()) {
-      _showLastVerseMessage();
-      return;
+    if (index < widget.verses.length - 1) {
+      final verse = widget.verses[index+1];
+      final verses = widget.verses;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GitaVersePage(verses: verses, verse: verse),
+        ),
+      );
     }
-    
-    if (_hasNavigationCallback()) {
-      widget.onNavigate!(true);
-    } else {
-      _attemptDirectNavigation();
-    }
+
   }
 
-  // Helper method to check if navigation callback is available
-  bool _hasNavigationCallback() {
-    return widget.onNavigate != null;
-  }
-
-  // Show message when reaching the last verse
-  void _showLastVerseMessage() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('This is the last verse in this chapter'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
-  // Fallback navigation method
-  void _fallbackNavigation() {
-    Navigator.pop(context);
-  }
-
-  // Check if this is the first verse in the chapter
   bool _isFirstVerse() {
-    return widget.verse.shloka == 1;
+    return index == 0;
   }
-
-  // Check if this is the last verse in the chapter
   bool _isLastVerse() {
-    final chapterVerseCount = _getChapterVerseCount();
-    final currentShloka = int.parse(widget.verse.shloka.toString());
-    final currentChapter = int.parse(widget.verse.chapter.toString());
-    
-    int? totalVerses = chapterVerseCount[currentChapter];
-    return totalVerses != null && currentShloka == totalVerses;
-  }
-
-  // Get the verse count for each chapter
-  Map<int, int> _getChapterVerseCount() {
-    // Standard Bhagavad Gita chapter verse counts
-    return {
-      1: 47, 2: 72, 3: 43, 4: 42, 5: 29, 6: 47,
-      7: 30, 8: 28, 9: 34, 10: 42, 11: 55, 12: 20,
-      13: 35, 14: 27, 15: 20, 16: 24, 17: 28, 18: 78
-    };
-  }
-
-  // Attempt direct navigation when callback is not available
-  void _attemptDirectNavigation() {
-    // TODO: Implement verse fetching logic based on your data structure
-    // For now, show placeholder message
-    _showNavigationNotImplementedMessage();
-    _fallbackNavigation();
-  }
-
-  // Show message when navigation is not implemented
-  void _showNavigationNotImplementedMessage() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Navigation to specific verses not implemented yet'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
-  // Check if navigation is possible in the given direction
-  bool _canNavigate(bool forward) {
-    if (forward) {
-      return !_isLastVerse();
-    } else {
-      return !_isFirstVerse();
-    }
+    return index == widget.verses.length - 1;
   }
   
   @override
@@ -1477,7 +1388,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
         children: [
           // Previous verse button
           ElevatedButton.icon(
-            onPressed: _isFirstVerse() ? null : _navigateToPreviousVerse,
+            onPressed:  _navigateToPreviousVerse,
             icon: const Icon(Icons.arrow_back),
             label: const Text('Previous'),
             style: ElevatedButton.styleFrom(
@@ -1491,7 +1402,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
           
           // Next verse button
           ElevatedButton.icon(
-            onPressed: _isLastVerse() ? null : _navigateToNextVerse,
+            onPressed: _navigateToNextVerse,
             icon: const Icon(Icons.arrow_forward),
             label: const Text('Next'),
             style: ElevatedButton.styleFrom(
@@ -1501,7 +1412,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
               disabledForegroundColor: Colors.grey.shade600,
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
             ),
-          ),
+          )
+
         ],
       ),
     );
@@ -1533,4 +1445,44 @@ class _GitaVersePageState extends State<GitaVersePage> {
   }
 }
 
+// unused functions
+/*
+void _loadWordMeanings() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
 
+      // Check if word meanings are already processed and stored
+      final lines = widget.verse.english.split('\n');
+
+      for (String line in lines) {
+        if (line.trim().isEmpty) continue;
+
+        // Try to get pre-processed meanings for this line
+        final processedWords = await _wordMeaningService.getVerseWordMeanings(
+          widget.verse.chapter,
+          widget.verse.shloka,
+          line
+        );
+
+        if (processedWords == null || processedWords.isEmpty) {
+          // Process and store meanings for this verse
+          await _wordMeaningService.processAndStoreVerseMeanings(widget.verse);
+        }
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading word meanings: $e');
+      setState(() {
+        _errorMessage = 'Error loading word meanings';
+        _isLoading = false;
+      });
+    }
+  }
+
+* */

@@ -93,7 +93,7 @@ class _ChapterPageState extends State<ChapterPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => GitaVersePage(verse: verse),
+              builder: (context) => GitaVersePage(verses: verses, verse: verse),
             ),
           );
         },

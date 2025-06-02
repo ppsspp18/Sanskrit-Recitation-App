@@ -24,7 +24,7 @@ class VerseRepository {
     }
     
     // Load verses from gita.json
-    final String gitaJsonString = await rootBundle.loadString('gita.json');
+    final String gitaJsonString = await rootBundle.loadString('assets/gita.json');
     final List<dynamic> gitaVerses = json.decode(gitaJsonString);
     
     // Load audio mappings

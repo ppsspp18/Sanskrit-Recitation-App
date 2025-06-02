@@ -100,7 +100,7 @@ class _BookmarkChapterPageState extends State<BookmarkChapterPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => GitaVersePage(verse: verse),
+              builder: (context) => GitaVersePage(verses : verses, verse: verse),
             ),
           );
         },
