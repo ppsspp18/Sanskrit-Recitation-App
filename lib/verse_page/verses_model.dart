@@ -93,9 +93,9 @@ class Verse_1 {
       synonyms: syns,
       translation: json['translation'] ?? '',
       purport: json['purport'] ?? '',
-      audioPath: json['audioPath'],
+      audioPath: "assets/Audio/Bhagavad_gita_${json['chapter']}.${json['shloka']}.mp3",
       segments: segmentsList,
-      verseId: json['verseId'],
+      verseId: json['verseId'] ?? '',
     );
   }
 

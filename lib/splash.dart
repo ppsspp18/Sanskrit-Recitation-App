@@ -53,7 +53,7 @@ class _SplashPageState extends State<SplashPage> {
       children: [
         // Background Image (Bhagavad Gita)
         Image.asset(
-        'Bg.png',
+        'assets/Images/Bg.png',
         fit: BoxFit.cover,
         ),
         // Overlay (dark or orange)
@@ -69,7 +69,7 @@ class _SplashPageState extends State<SplashPage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(100),
             child: Image.asset(
-            'Logo_2.png',
+            'assets/Images/Logo_2.png',
             width: 180,
             height: 180,
             fit: BoxFit.cover,

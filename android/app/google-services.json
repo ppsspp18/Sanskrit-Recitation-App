@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "333668792885",
+    "project_id": "shloka-recitation-project",
+    "storage_bucket": "shloka-recitation-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:333668792885:android:9d5671bab5286f4bd28f7c",
+        "android_client_info": {
+          "package_name": "com.bvc.shlokarecitation"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9uoBqbfOdt7WxJTgtWLhWTh4pnjLZ7h8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:333668792885:android:bcca8e4340ec1da1d28f7c",
+        "android_client_info": {
+          "package_name": "com.example.sanskrit_racitatiion_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9uoBqbfOdt7WxJTgtWLhWTh4pnjLZ7h8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
