@@ -5,7 +5,8 @@ import 'package:sanskrit_racitatiion_project/verse_page/word_meaning_service.dar
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sanskrit_racitatiion_project/bookmark_screen/bookmark_manager.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/audio_player_widget.dart';
-import 'package:sanskrit_racitatiion_project/widgets/colors.dart';
+import 'package:provider/provider.dart';
+import 'package:sanskrit_racitatiion_project/theme/theme_provider.dart';
 
 class GitaVersePage extends StatefulWidget {
   final List<Verse_1> verses; // List of verses in the chapter
@@ -27,11 +28,24 @@ class _GitaVersePageState extends State<GitaVersePage> {
   // Services
   final WordMeaningService _wordMeaningService = WordMeaningService();
   Set<String> _bookmarkedVerseIds = {};
+
+  late Color color1;
+  late Color color2;
+  late Color color3;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    color1 = themeProvider.currentTheme.color1;
+    color2 = themeProvider.currentTheme.color2;
+    color3 = themeProvider.currentTheme.color3;
+  }
   
   // UI Constants for consistent theming
   // Colors
-  static const Color primaryColor = color1;
-  static const Color dividerColor = color2;
+  Color get primaryColor => color1;
+  Color get dividerColor => color2;
   static const Color textPrimaryColor = Colors.black;
   static const Color textSecondaryColor = Colors.grey;
   static const Color errorColor = Colors.red;
@@ -395,10 +409,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
         appBar: AppBar(
           title: Text(
             'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
-            style: const TextStyle(color: color2),
+            style: TextStyle(color: color2),
           ),
-          backgroundColor: _GitaVersePageState.primaryColor,
-          iconTheme: const IconThemeData(color: color2),
+          backgroundColor: color1,
+          iconTheme: IconThemeData(color: color2),
           actions: [
             IconButton(
               icon: Icon(
@@ -416,7 +430,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
               ),
               label: Text(
                 _isAdvancedView ? 'Advanced View' : 'Default View',
-                style: const TextStyle(color: color2),
+                style: TextStyle(color: color2),
               ),
             ),
           ],
@@ -468,7 +482,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                       children: [
                                         Text(
                                           'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: _GitaVersePageState.fontSizeHeading,
                                             fontWeight: FontWeight.bold,
                                             color: color2
@@ -687,7 +701,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: _GitaVersePageState.primaryColor,
+          activeColor: color1,
         ),
         Text(label),
       ],
@@ -702,10 +716,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: _GitaVersePageState.fontSizeHeading,
             fontWeight: FontWeight.bold,
-            color: _GitaVersePageState.primaryColor,
+            color: color1,
           ),
         ),
         const SizedBox(height: 12.0),
@@ -1134,9 +1148,9 @@ class _GitaVersePageState extends State<GitaVersePage> {
       spans.add(
         TextSpan(
           text: entry.key,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: primaryColor,
+            color: color1,
           ),
         ),
       );
@@ -1206,10 +1220,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
           ),
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: fontSizeSubheading,
               fontWeight: FontWeight.bold,
-              color: primaryColor,
+              color: color1,
             ),
           ),
         ),
@@ -1308,7 +1322,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                         ? _position.inMilliseconds / _duration.inMilliseconds
                         : 0.0,
                     backgroundColor: Colors.grey.shade300,
-                    valueColor: const AlwaysStoppedAnimation<Color>(primaryColor),
+                    valueColor: AlwaysStoppedAnimation<Color>(color1),
                   ),
                 ),
               ],
@@ -1369,7 +1383,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
           // Previous verse button
           ElevatedButton.icon(
             onPressed:  _navigateToPreviousVerse,
-            icon: const Icon(Icons.arrow_back , color: color2),
+            icon: Icon(Icons.arrow_back , color: color2),
             label: const Text('Previous'),
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
@@ -1381,7 +1395,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
           // Next verse button
           ElevatedButton.icon(
             onPressed: _navigateToNextVerse,
-            icon: const Icon(Icons.arrow_forward, color: color2),
+            icon: Icon(Icons.arrow_forward, color: color2),
             label: const Text('Next'),
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,

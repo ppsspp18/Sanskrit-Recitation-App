@@ -42,25 +42,34 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Access the theme from the provider
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    
-    return MaterialApp(
-      title: 'Sanskrit Recitation',
-      debugShowCheckedModeBanner: false,
-      theme: themeProvider.currentTheme,
-      home: Stack(
-        children: [
-          SplashPage(),
-          // Floating audio player overlay
-          Positioned.fill(
-            child: IgnorePointer(
-              ignoring: false,
-              child: GlobalAudioPlayerWidget(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        final theme = themeProvider.currentTheme;
+        return MaterialApp(
+          title: 'Sanskrit Recitation',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            primaryColor: theme.color1,
+            scaffoldBackgroundColor: theme.color3,
+            appBarTheme: AppBarTheme(
+              backgroundColor: theme.color1,
+              foregroundColor: theme.color2,
             ),
           ),
-        ],
-      ),
+          home: Stack(
+            children: [
+              SplashPage(),
+              Positioned.fill(
+                child: IgnorePointer(
+                  ignoring: false,
+                  child: GlobalAudioPlayerWidget(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
+

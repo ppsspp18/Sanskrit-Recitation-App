@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:sanskrit_racitatiion_project/bookmark_screen/bookmark_manager.dart';
-import 'package:sanskrit_racitatiion_project/widgets/colors.dart';
+import 'package:provider/provider.dart';
+import 'package:sanskrit_racitatiion_project/theme/theme_provider.dart';
 
 
 class SearchScreen extends StatefulWidget {
@@ -17,6 +18,19 @@ class _SearchScreenState extends State<SearchScreen> {
   List<dynamic> _verses = [];
   List<dynamic> _results = [];
   Set<String> _bookmarkedVerseIds = {};
+
+  late Color color1;
+  late Color color2;
+  late Color color3;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    color1 = themeProvider.currentTheme.color1;
+    color2 = themeProvider.currentTheme.color2;
+    color3 = themeProvider.currentTheme.color3;
+  }
 
   @override
   void initState() {
@@ -164,12 +178,12 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: _searchController,
-              style: const TextStyle(color: color1, fontWeight: FontWeight.w500),
+              style: TextStyle(color: color1, fontWeight: FontWeight.w500),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: color2.withOpacity(0.1),
                 hintText: 'Search verse, translation, or purport',
-                hintStyle: const TextStyle(color: color1),
+                hintStyle: TextStyle(color: color1),
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),

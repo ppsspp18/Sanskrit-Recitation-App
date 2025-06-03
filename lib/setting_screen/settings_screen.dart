@@ -1,37 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:sanskrit_racitatiion_project/theme/theme_provider.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themes = themeProvider.availableThemes;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-
+        title: const Text('Settings'),
+        backgroundColor: themeProvider.currentTheme.color1,
+        foregroundColor: themeProvider.currentTheme.color2,
       ),
-      body: Column(
-        children: [
-          AppBar(
-            title: Text('Language'),
-            backgroundColor: Colors.deepPurpleAccent,
-            foregroundColor: Colors.white,
-            automaticallyImplyLeading: false,
-          ),
-          AppBar(
-            title: Text('Audio Feature'),
-            backgroundColor: Colors.deepPurpleAccent,
-            foregroundColor: Colors.white,
-            automaticallyImplyLeading: false,
-          )
-        ],
+      body: ListView.builder(
+        itemCount: themes.length,
+        itemBuilder: (context, index) {
+          final theme = themes[index];
+          return ListTile(
+            leading: CircleAvatar(backgroundColor: theme.color1),
+            title: Text('Theme ${index + 1}'),
+            trailing: ElevatedButton(
+              onPressed: () {
+                themeProvider.changeTheme(index);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.color1,
+                foregroundColor: theme.color2,
+              ),
+              child: const Text("Select"),
+            ),
+          );
+        },
       ),
     );
   }

@@ -3,7 +3,8 @@ import 'package:sanskrit_racitatiion_project/verse_page/verse_detail_screen.dart
 import 'package:sanskrit_racitatiion_project/verse_page/verse_repository.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sanskrit_racitatiion_project/widgets/colors.dart';
+import 'package:provider/provider.dart';
+import 'package:sanskrit_racitatiion_project/theme/theme_provider.dart';
 
 class BookmarkChapterPage extends StatefulWidget {
   final String chapterId;
@@ -17,6 +18,20 @@ class _BookmarkChapterPageState extends State<BookmarkChapterPage> {
   final VerseRepository _repository = VerseRepository();
   List<Verse_1> verses = [];
   bool _isLoading = true;
+
+  late Color color1;
+  late Color color2;
+  late Color color3;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    color1 = themeProvider.currentTheme.color1;
+    color2 = themeProvider.currentTheme.color2;
+    color3 = themeProvider.currentTheme.color3;
+  }
+
 
   @override
   void initState() {
@@ -57,6 +72,7 @@ class _BookmarkChapterPageState extends State<BookmarkChapterPage> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         title: Text('CHAPTER ${widget.chapterId}'),
@@ -113,7 +129,7 @@ class _BookmarkChapterPageState extends State<BookmarkChapterPage> {
                 children: [
                   Text(
                     'Verse ${verse.shloka}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: color1,
@@ -121,7 +137,7 @@ class _BookmarkChapterPageState extends State<BookmarkChapterPage> {
                   ),
                   // Audio indicator if verse has audio
                   if (verse.audioPath?.isNotEmpty == true)
-                    const Icon(Icons.audiotrack, color: color1),
+                     Icon(Icons.audiotrack, color: color1),
                 ],
               ),
               const Divider(),

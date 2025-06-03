@@ -3,7 +3,9 @@ import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart
 import 'package:sanskrit_racitatiion_project/chapter_page.dart';
 import 'package:sanskrit_racitatiion_project/search.dart';
 import 'package:sanskrit_racitatiion_project/bookmark_screen/book_mark.dart';
-import 'package:sanskrit_racitatiion_project/widgets/colors.dart';
+import 'package:provider/provider.dart';
+import 'package:sanskrit_racitatiion_project/theme/theme_provider.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,15 +17,21 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final List<String> chapterIds = List.generate(18, (index) => (index + 1).toString());
 
+
   @override
   Widget build(BuildContext context) {
-    return homePage(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
+    final color1 = themeProvider.currentTheme.color1;
+    final color2 = themeProvider.currentTheme.color2;
+    final color3 = themeProvider.currentTheme.color3;
+    return homePage(context, color1, color2, color3);
   }
 
-  Scaffold homePage(BuildContext context) {
+  Scaffold homePage(BuildContext context, Color color1, Color color2, Color color3) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'BHAGAVAD GITA',
           style: TextStyle(
         fontWeight: FontWeight.bold,
@@ -49,7 +57,7 @@ class _HomePageState extends State<HomePage> {
                 MaterialPageRoute(builder: (context) => const SearchScreen()),
               );
             },
-            icon: const Icon(Icons.search, color: color2), // Search icon
+            icon: Icon(Icons.search, color: color2), // Search icon
             tooltip: 'Search',
           ),
           IconButton(
@@ -59,7 +67,7 @@ class _HomePageState extends State<HomePage> {
                 MaterialPageRoute(builder: (context) =>  BookmarkScreen()),
               );
             },
-            icon: const Icon(Icons.bookmark, color: color2), // Bookmark icon
+            icon: Icon(Icons.bookmark, color: color2), // Bookmark icon
           ),
           IconButton(
             onPressed: () {
@@ -68,7 +76,7 @@ class _HomePageState extends State<HomePage> {
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
-            icon: const Icon(Icons.settings, color: color2), // Settings icon
+            icon: Icon(Icons.settings, color: color2), // Settings icon
             tooltip: 'Settings',
           ),
         ],
@@ -120,7 +128,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                 Text(
                   'Chapter $chapterId',
-                  style: const TextStyle(
+                  style: TextStyle(
                   fontWeight: FontWeight.bold,
 
                   fontSize: 18, // Increased from 15 to 18
@@ -152,7 +160,7 @@ class _HomePageState extends State<HomePage> {
                     textStyle: const TextStyle(fontSize: 13), // Increased from 11 to 13
                     minimumSize: const Size(0, 30),
                     ),
-                    icon: const Icon(Icons.menu_book, size: 16, color: color2),
+                    icon: Icon(Icons.menu_book, size: 16, color: color2),
                     label: const Text('Read'),
                     onPressed: () {
                     Navigator.push(
@@ -166,13 +174,13 @@ class _HomePageState extends State<HomePage> {
                     style: ElevatedButton.styleFrom(
                     backgroundColor: color1,
                     foregroundColor: color2,
-                    side: const BorderSide(color: color1),
+                    side: BorderSide(color: color1),
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                     textStyle: const TextStyle(fontSize: 13), // Increased from 11 to 13
                     minimumSize: const Size(0, 30),
                     ),
-                    icon: const Icon(Icons.lightbulb, size: 16, color: color2),
+                    icon: Icon(Icons.lightbulb, size: 16, color: color2),
                     label: const Text('Learn'),
                     onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(

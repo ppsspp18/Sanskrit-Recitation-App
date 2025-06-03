@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verse_detail_screen.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verse_repository.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
-import 'package:sanskrit_racitatiion_project/widgets/colors.dart';
-//import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart';
-//import 'package:sanskrit_racitatiion_project/book_mark.dart';
+import 'package:provider/provider.dart';
+import 'package:sanskrit_racitatiion_project/theme/theme_provider.dart';
 
 class ChapterPage extends StatefulWidget {
   final String chapterId;
@@ -18,6 +17,19 @@ class _ChapterPageState extends State<ChapterPage> {
   final VerseRepository _repository = VerseRepository();
   List<Verse_1> verses = [];
   bool _isLoading = true;
+
+  late Color color1;
+  late Color color2;
+  late Color color3;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    color1 = themeProvider.currentTheme.color1;
+    color2 = themeProvider.currentTheme.color2;
+    color3 = themeProvider.currentTheme.color3;
+  }
 
   @override
   void initState() {
@@ -99,7 +111,7 @@ class _ChapterPageState extends State<ChapterPage> {
                 children: [
                   Text(
                     'Verse ${verse.shloka}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: color1,
@@ -107,7 +119,7 @@ class _ChapterPageState extends State<ChapterPage> {
                   ),
                   // Audio indicator if verse has audio
                   if (verse.audioPath != null)
-                    const Icon(Icons.audiotrack, color: color1),
+                     Icon(Icons.audiotrack, color: color1),
 
                 ],
               ),
@@ -135,7 +147,7 @@ class _ChapterPageState extends State<ChapterPage> {
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.segment, 
                         size: 16, 
                         color: color1,
