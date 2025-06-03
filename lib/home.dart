@@ -5,6 +5,7 @@ import 'package:sanskrit_racitatiion_project/search.dart';
 import 'package:sanskrit_racitatiion_project/bookmark_screen/book_mark.dart';
 import 'package:provider/provider.dart';
 import 'package:sanskrit_racitatiion_project/theme/theme_provider.dart';
+import 'package:sanskrit_racitatiion_project/famousVerse/famousVerse_main_page.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -197,6 +198,38 @@ class _HomePageState extends State<HomePage> {
           },
         ),
       ),
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        color: color3,
+        child: Padding(
+          padding: const EdgeInsets.all(2.0),
+          child: SizedBox(
+            height: 40,
+            width: double.infinity,
+            child: TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: color1,
+                foregroundColor: color2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
+                // Navigate to 108 famous verses screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FamousVerseScreen()),
+                );
+              },
+              child: const Text(
+                '108 Famous Verses',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ),
+        ),
+      ),
+
     );
   }
 }
