@@ -5,6 +5,7 @@ import 'package:sanskrit_racitatiion_project/verse_page/word_meaning_service.dar
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sanskrit_racitatiion_project/bookmark_screen/bookmark_manager.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/audio_player_widget.dart';
+import 'package:sanskrit_racitatiion_project/widgets/colors.dart';
 
 class GitaVersePage extends StatefulWidget {
   final List<Verse_1> verses; // List of verses in the chapter
@@ -29,8 +30,8 @@ class _GitaVersePageState extends State<GitaVersePage> {
   
   // UI Constants for consistent theming
   // Colors
-  static const Color primaryColor = Color(0xFF2C2C54);
-  static const Color dividerColor = Color(0xFFFF9933);
+  static const Color primaryColor = color1;
+  static const Color dividerColor = color2;
   static const Color textPrimaryColor = Colors.black;
   static const Color textSecondaryColor = Colors.grey;
   static const Color errorColor = Colors.red;
@@ -394,15 +395,15 @@ class _GitaVersePageState extends State<GitaVersePage> {
         appBar: AppBar(
           title: Text(
             'Bhagavad Gita ${widget.verse.chapter}.${widget.verse.shloka}',
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: color2),
           ),
           backgroundColor: _GitaVersePageState.primaryColor,
-          iconTheme: const IconThemeData(color: Colors.white),
+          iconTheme: const IconThemeData(color: color2),
           actions: [
             IconButton(
               icon: Icon(
                 isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                color: isBookmarked ? Color(0xFF2C2C54) : Color(0xFF2C2C54),
+                color: isBookmarked ? color2 : color2,
               ),
               onPressed: () => _toggleBookmark(verseId),
             ),
@@ -411,11 +412,11 @@ class _GitaVersePageState extends State<GitaVersePage> {
               onPressed: _toggleAdvancedView,
               icon: Icon(
                 _isAdvancedView ? Icons.tune : Icons.view_agenda,
-                color: Colors.white,
+                color: color2,
               ),
               label: Text(
                 _isAdvancedView ? 'Advanced View' : 'Default View',
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: color2),
               ),
             ),
           ],
@@ -470,12 +471,13 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                           style: const TextStyle(
                                             fontSize: _GitaVersePageState.fontSizeHeading,
                                             fontWeight: FontWeight.bold,
+                                            color: color2
                                           ),
                                         ),
                                         IconButton(
                                           icon: Icon(
                                             isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                                            color: isBookmarked ? Color(0xFF2C2C54) : Color(0xFF2C2C54),
+                                            color: isBookmarked ? color2 : color2,
                                           ),
                                           onPressed: () => _toggleBookmark(verseId),
                                         ),
@@ -575,9 +577,6 @@ class _GitaVersePageState extends State<GitaVersePage> {
                                       audioAssetPath: 'assets/Audio/Bhagavad_gita_${widget.verse.chapter}.${widget.verse.shloka}.mp3',
                                       verseText: widget.verse.english,
                                     ),
-                                
-
-                                  _buildNavigationButtons(),
                                 ],
                               ),
                             ),        
@@ -624,6 +623,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                   ),
               ],
             ),
+        bottomNavigationBar: _buildNavigationButtons(),
       ),
     );
   }
@@ -1010,10 +1010,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
             margin: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 2.0),
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             decoration: BoxDecoration(
-              color: (customMeaning != null || meaning != null) ? Colors.orange.shade50 : Colors.grey.shade100,
+              color: (customMeaning != null || meaning != null) ? color3 : color3,
               borderRadius: BorderRadius.circular(8.0),
               border: Border.all(
-                color: (customMeaning != null || meaning != null) ? Colors.orange.shade200 : Colors.grey.shade300,
+                color: (customMeaning != null || meaning != null) ? color3 : color3,
                 width: 0.1,
               ),
             ),
@@ -1028,7 +1028,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                       style: TextStyle(
                         fontSize: isPart ? fontSizeMeaning + 2 : fontSizeMeaning + 4,
                         fontWeight: FontWeight.w600,
-                        color: (customMeaning != null || meaning != null) ? Colors.orange.shade800 : Colors.grey.shade600,
+                        color: (customMeaning != null || meaning != null) ? color2 : color2,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -1045,7 +1045,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
                   style: TextStyle(
                     fontSize: fontSizeMeaning,
                     color: customMeaning != null
-                        ? Colors.blue.shade700
+                        ? color2
                         : (meaning != null ? Colors.grey.shade700 : Colors.grey.shade400),
                     fontStyle: FontStyle.italic,
                   ),
@@ -1369,13 +1369,11 @@ class _GitaVersePageState extends State<GitaVersePage> {
           // Previous verse button
           ElevatedButton.icon(
             onPressed:  _navigateToPreviousVerse,
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back , color: color2),
             label: const Text('Previous'),
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.grey.shade300,
-              disabledForegroundColor: Colors.grey.shade600,
+              foregroundColor: color2,
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
             ),
           ),
@@ -1383,13 +1381,11 @@ class _GitaVersePageState extends State<GitaVersePage> {
           // Next verse button
           ElevatedButton.icon(
             onPressed: _navigateToNextVerse,
-            icon: const Icon(Icons.arrow_forward),
+            icon: const Icon(Icons.arrow_forward, color: color2),
             label: const Text('Next'),
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.grey.shade300,
-              disabledForegroundColor: Colors.grey.shade600,
+              foregroundColor: color2,
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
             ),
           )

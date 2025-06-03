@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verse_detail_screen.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verse_repository.dart';
 import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
+import 'package:sanskrit_racitatiion_project/widgets/colors.dart';
 //import 'package:sanskrit_racitatiion_project/setting_screen/settings_screen.dart';
 //import 'package:sanskrit_racitatiion_project/book_mark.dart';
 
@@ -45,8 +46,8 @@ class _ChapterPageState extends State<ChapterPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('CHAPTER ${widget.chapterId}'),
-        backgroundColor: Color(0xFF2C2C54),
-        foregroundColor: Color(0xFFFF9933),
+        backgroundColor: color1,
+        foregroundColor: color2,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -78,7 +79,7 @@ class _ChapterPageState extends State<ChapterPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      color: const Color(0xFFFFE0B2),
+      color: color3,
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -101,12 +102,12 @@ class _ChapterPageState extends State<ChapterPage> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.deepPurpleAccent,
+                      color: color1,
                     ),
                   ),
                   // Audio indicator if verse has audio
                   if (verse.audioPath != null)
-                    const Icon(Icons.audiotrack, color: Colors.deepPurpleAccent),
+                    const Icon(Icons.audiotrack, color: color1),
 
                 ],
               ),
@@ -137,7 +138,7 @@ class _ChapterPageState extends State<ChapterPage> {
                       const Icon(
                         Icons.segment, 
                         size: 16, 
-                        color: Colors.deepPurpleAccent,
+                        color: color1,
                       ),
                       const SizedBox(width: 4),
                       Text(

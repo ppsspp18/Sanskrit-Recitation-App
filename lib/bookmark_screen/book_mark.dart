@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:sanskrit_racitatiion_project/bookmark_screen/book_mark_chapter_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sanskrit_racitatiion_project/widgets/colors.dart';
 
 
 class BookmarkScreen extends StatefulWidget {
@@ -53,11 +54,11 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
             fontWeight: FontWeight.bold,
             fontSize: 18,
             letterSpacing: 2,
-            color: Color(0xFFFF9933),
+            color: color2,
           ),
         ),
-        backgroundColor: Color(0xFF2C2C54),
-        foregroundColor: Color(0xFFFF9933),
+        backgroundColor: color1,
+        foregroundColor: color2,
         elevation: 6,
         centerTitle: true,
         shape: const RoundedRectangleBorder(
@@ -103,7 +104,7 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
             return Card(
 
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              color: const Color(0xFFFFE0B2),
+              color: color3,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
@@ -115,7 +116,7 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
-                        color: Color(0xFF2C2C54),
+                        color: color1,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -135,14 +136,14 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                       children: [
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF2C2C54),
-                            foregroundColor: Color(0xFFFF9933),
+                            backgroundColor: color1,
+                            foregroundColor: color2,
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                             textStyle: const TextStyle(fontSize: 11),
                             minimumSize: const Size(0, 30),
                           ),
-                          icon: const Icon(Icons.menu_book, size: 16),
+                          icon: const Icon(Icons.menu_book, size: 16, color: color2,),
                           label: const Text('Read'),
                           onPressed: () {
                             Navigator.push(
@@ -154,15 +155,15 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                         const SizedBox(height: 5),
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF2C2C54),
-                            foregroundColor: Color(0xFFFF9933),
-                            side: const BorderSide(color: Colors.deepPurpleAccent),
+                            backgroundColor: color1,
+                            foregroundColor: color2,
+                            side: const BorderSide(color: color1),
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                             textStyle: const TextStyle(fontSize: 11),
                             minimumSize: const Size(0, 30),
                           ),
-                          icon: const Icon(Icons.lightbulb, size: 16),
+                          icon: const Icon(Icons.lightbulb, size: 16, color: color2,),
                           label: const Text('Learn'),
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(

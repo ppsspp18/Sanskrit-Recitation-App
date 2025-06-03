@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:sanskrit_racitatiion_project/bookmark_screen/bookmark_manager.dart';
+import 'package:sanskrit_racitatiion_project/widgets/colors.dart';
 
 
 class SearchScreen extends StatefulWidget {
@@ -154,8 +155,8 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       appBar: AppBar(
           title: const Text('Search'),
-          backgroundColor: const Color(0xFF2C2C54),
-          foregroundColor: const Color(0xFFFF9933),
+          backgroundColor: color1,
+          foregroundColor: color2,
       ),
       body: Column(
         children: [
@@ -163,12 +164,12 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: _searchController,
-              style: const TextStyle(color: Color(0xFF2C2C54), fontWeight: FontWeight.w500),
+              style: const TextStyle(color: color1, fontWeight: FontWeight.w500),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Color(0xFFFF9933).withOpacity(0.1),
+                fillColor: color2.withOpacity(0.1),
                 hintText: 'Search verse, translation, or purport',
-                hintStyle: const TextStyle(color: Color(0xFF2C2C54)),
+                hintStyle: const TextStyle(color: color1),
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -190,11 +191,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   title:
                   Row(
                   children: [
-                    Text("Verse ${item['chapter']}.${item['shloka']}", style: TextStyle(color: Color(0xFF2C2C54), fontWeight: FontWeight.bold)),
+                    Text("Verse ${item['chapter']}.${item['shloka']}", style: TextStyle(color: color1, fontWeight: FontWeight.bold)),
                     IconButton(
                       icon: Icon(
                         isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                        color: isBookmarked ? Color(0xFF2C2C54) : Color(0xFF2C2C54),
+                        color: isBookmarked ? color1 : color1,
                       ),
                       onPressed: () => _toggleBookmark(verseId),
                     ),
@@ -203,13 +204,13 @@ class _SearchScreenState extends State<SearchScreen> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Verse: ", style: TextStyle(color: Color(0xFF2C2C54), fontWeight: FontWeight.bold)),
+                      Text("Verse: ", style: TextStyle(color: color1, fontWeight: FontWeight.bold)),
                       highlightText(item['english'], _searchController.text),
                       const SizedBox(height: 4),
-                      Text("Translation:",style: TextStyle(color: Color(0xFF2C2C54), fontWeight: FontWeight.bold)),
+                      Text("Translation:",style: TextStyle(color: color1, fontWeight: FontWeight.bold)),
                       highlightText(item['translation'], _searchController.text),
                       const SizedBox(height: 4),
-                      Text("Purport:", style: TextStyle(color: Color(0xFF2C2C54), fontWeight: FontWeight.bold)),
+                      Text("Purport:", style: TextStyle(color: color1, fontWeight: FontWeight.bold)),
                       highlightText(item['purport'], _searchController.text),
                     ],
                   ),
