@@ -4,6 +4,9 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:sanskrit_racitatiion_project/bookmark_screen/bookmark_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:sanskrit_racitatiion_project/theme/theme_provider.dart';
+import 'package:sanskrit_racitatiion_project/verse_page/verse_detail_screen.dart';
+import 'package:sanskrit_racitatiion_project/verse_page/verse_repository.dart';
+import 'package:sanskrit_racitatiion_project/verse_page/verses_model.dart';
 
 
 class SearchScreen extends StatefulWidget {
@@ -14,6 +17,11 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  final VerseRepository _repository = VerseRepository();
+  List<Verse_1> verses = [];
+  bool _isLoading = true;
+  String _filterType = 'All';
+
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _verses = [];
   List<dynamic> _results = [];
@@ -81,20 +89,47 @@ class _SearchScreenState extends State<SearchScreen> {
         .replaceAll(RegExp(r'[ēêèéë]'), 'e')
         .replaceAll(RegExp(r'[ōôòóö]'), 'o');
   }
-  void _search(String query) {
+
+  void _search(String query) async {
     final normQuery = normalize(query);
 
+    final filteredResults = _verses.where((verse) {
+      String targetText = '';
+      switch (_filterType) {
+        case 'Sanskrit':
+          targetText = verse['sanskrit'];
+          break;
+        case 'English':
+          targetText = verse['english'];
+          break;
+        case 'Translation':
+          targetText = verse['translation'];
+          break;
+        case 'Purport':
+          targetText = verse['purport'];
+          break;
+        default: // All
+          targetText = verse['sanskrit'] +
+              verse['english'] +
+              verse['translation'] +
+              verse['purport'];
+      }
+      return normalize(targetText).contains(normQuery);
+    }).toList();
+
     setState(() {
-      _results = _verses.where((verse) {
-        final combinedText = (verse['sanskrit'] +
-            verse['english'] +
-            verse['translation'] +
-            verse['purport']);
-        final normText = normalize(combinedText);
-        return normText.contains(normQuery);
-      }).toList();
+      _results = filteredResults;
     });
+
+    if (filteredResults.isNotEmpty) {
+      final firstChapter = filteredResults.first['chapter'].toString();
+      await _loadChapterVersesForNavigation(firstChapter);
+    }
   }
+
+
+
+
   int mapNormalizedIndexToOriginal(String normalized, String original, int normIndex) {
     int origIndex = 0;
     int count = 0;
@@ -162,6 +197,21 @@ class _SearchScreenState extends State<SearchScreen> {
     return RichText(text: TextSpan(children: spans));
   }
 
+  Future<void> _loadChapterVersesForNavigation(String chapterId) async {
+    try {
+      final loadedVerses = await _repository.getVersesForChapter(chapterId);
+      setState(() {
+        verses = loadedVerses;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      // You might want to add error handling here
+      debugPrint('Error loading verses: $e');
+    }
+  }
 
 
   @override
@@ -174,6 +224,32 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Row(
+              children: [
+                const Text("Search in: ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 10),
+                DropdownButton<String>(
+                  value: _filterType,
+                  items: const [
+                    DropdownMenuItem(value: 'All', child: Text('All', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DropdownMenuItem(value: 'Sanskrit', child: Text('Sanskrit', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DropdownMenuItem(value: 'English', child: Text('English', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DropdownMenuItem(value: 'Translation', child: Text('Translation', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DropdownMenuItem(value: 'Purport', child: Text('Purport', style: TextStyle(fontWeight: FontWeight.bold))),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _filterType = value!;
+                      _search(_searchController.text);
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
@@ -201,11 +277,32 @@ class _SearchScreenState extends State<SearchScreen> {
                 final shloka = item['shloka'].toString();
                 final verseId = "$chapter:$shloka";
                 final isBookmarked = _bookmarkedVerseIds.contains(verseId);
+                final verse = verses.firstWhere(
+                      (v) => v.verseId == "$chapter".padLeft(2, '0') + "-" + "$shloka".padLeft(2, '0'),
+                  orElse: () => Verse_1.fromJson(item),
+                );
+
                 return ListTile(
                   title:
                   Row(
                   children: [
-                    Text("Verse ${item['chapter']}.${item['shloka']}", style: TextStyle(color: color1, fontWeight: FontWeight.bold)),
+                    ElevatedButton.icon(
+                        icon: Icon(Icons.arrow_forward, color: color2),
+                        onPressed: (){
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GitaVersePage(verses: verses, verse: verse),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: color1,
+                          foregroundColor: color2,
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                        ),
+                        label: Text("Verse ${item['chapter']}.${item['shloka']}", style: TextStyle(color: color2, fontWeight: FontWeight.bold))
+                    ),
                     IconButton(
                       icon: Icon(
                         isBookmarked ? Icons.bookmark : Icons.bookmark_border,
@@ -218,16 +315,23 @@ class _SearchScreenState extends State<SearchScreen> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Verse: ", style: TextStyle(color: color1, fontWeight: FontWeight.bold)),
-                      highlightText(item['english'], _searchController.text),
-                      const SizedBox(height: 4),
-                      Text("Translation:",style: TextStyle(color: color1, fontWeight: FontWeight.bold)),
-                      highlightText(item['translation'], _searchController.text),
-                      const SizedBox(height: 4),
-                      Text("Purport:", style: TextStyle(color: color1, fontWeight: FontWeight.bold)),
-                      highlightText(item['purport'], _searchController.text),
+                      if (_filterType == 'All' || _filterType == 'English') ...[
+                        Text("Verse:", style: TextStyle(color: color1, fontWeight: FontWeight.bold)),
+                        highlightText(item['english'], _searchController.text),
+                        const SizedBox(height: 4),
+                      ],
+                      if (_filterType == 'All' || _filterType == 'Translation') ...[
+                        Text("Translation:", style: TextStyle(color: color1, fontWeight: FontWeight.bold)),
+                        highlightText(item['translation'], _searchController.text),
+                        const SizedBox(height: 4),
+                      ],
+                      if (_filterType == 'All' || _filterType == 'Purport') ...[
+                        Text("Purport:", style: TextStyle(color: color1, fontWeight: FontWeight.bold)),
+                        highlightText(item['purport'], _searchController.text),
+                      ],
                     ],
                   ),
+
                   isThreeLine: true,
                 );
               },

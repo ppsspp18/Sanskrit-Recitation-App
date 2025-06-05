@@ -659,9 +659,10 @@ class _GitaVersePageState extends State<GitaVersePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Show/Hide Sections',
             style: TextStyle(
+              color: color2,
               fontSize: _GitaVersePageState.fontSizeSubheading,
               fontWeight: FontWeight.bold,
             ),
