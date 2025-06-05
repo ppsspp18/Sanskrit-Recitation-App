@@ -99,6 +99,7 @@ class _GitaVersePageState extends State<GitaVersePage> {
     _loadCustomMeanings();
     //_checkBookmark();
     _loadBookmarks();
+    _loadPreferences();
 
     index = widget.verses.indexWhere((v) => v.shloka == widget.verse.shloka);
     if (index == -1) index = 0; // fallback in case of no match
@@ -117,6 +118,22 @@ class _GitaVersePageState extends State<GitaVersePage> {
     setState(() {
       _bookmarkedVerseIds = ids.toSet();
     });
+  }
+
+  Future<void> _loadPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _showDevanagari = prefs.getBool('showDevanagari') ?? true;
+      _showTransliteration = prefs.getBool('showTransliteration') ?? true;
+      _showSynonyms = prefs.getBool('showSynonyms') ?? true;
+      _showTranslation = prefs.getBool('showTranslation') ?? true;
+      _showPurport = prefs.getBool('showPurport') ?? true;
+    });
+  }
+
+  Future<void> _savePreference(String key, bool value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
   }
 
   void _toggleBookmark(String id) async {
@@ -674,18 +691,23 @@ class _GitaVersePageState extends State<GitaVersePage> {
             children: [
               _buildToggleSwitch('Devanagari', _showDevanagari, (value) {
                 setState(() => _showDevanagari = value);
+                _savePreference('showDevanagari', value);
               }),
               _buildToggleSwitch('Verse Text', _showTransliteration, (value) {
                 setState(() => _showTransliteration = value);
+                _savePreference('showTransliteration', value);
               }),
               _buildToggleSwitch('Synonyms', _showSynonyms, (value) {
                 setState(() => _showSynonyms = value);
+                _savePreference('showSynonyms', value);
               }),
               _buildToggleSwitch('Translation', _showTranslation, (value) {
                 setState(() => _showTranslation = value);
+                _savePreference('showTranslation', value);
               }),
               _buildToggleSwitch('Purport', _showPurport, (value) {
                 setState(() => _showPurport = value);
+                _savePreference('showPurport', value);
               }),
             ],
           ),

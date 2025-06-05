@@ -228,16 +228,17 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Row(
               children: [
-                const Text("Search in: ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text("Search in: ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color1)),
                 const SizedBox(width: 10),
                 DropdownButton<String>(
                   value: _filterType,
-                  items: const [
-                    DropdownMenuItem(value: 'All', child: Text('All', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DropdownMenuItem(value: 'Sanskrit', child: Text('Sanskrit', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DropdownMenuItem(value: 'English', child: Text('English', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DropdownMenuItem(value: 'Translation', child: Text('Translation', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DropdownMenuItem(value: 'Purport', child: Text('Purport', style: TextStyle(fontWeight: FontWeight.bold))),
+                  iconEnabledColor: color1,
+                  items: [
+                    DropdownMenuItem(value: 'All', child: Text('All', style: TextStyle(fontWeight: FontWeight.bold, color: color1))),
+                    DropdownMenuItem(value: 'Sanskrit', child: Text('Sanskrit', style: TextStyle(fontWeight: FontWeight.bold, color: color1))),
+                    DropdownMenuItem(value: 'English', child: Text('English', style: TextStyle(fontWeight: FontWeight.bold, color: color1))),
+                    DropdownMenuItem(value: 'Translation', child: Text('Translation', style: TextStyle(fontWeight: FontWeight.bold, color: color1))),
+                    DropdownMenuItem(value: 'Purport', child: Text('Purport', style: TextStyle(fontWeight: FontWeight.bold, color: color1))),
                   ],
                   onChanged: (value) {
                     setState(() {
