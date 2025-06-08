@@ -14,20 +14,21 @@ class ThemeProvider with ChangeNotifier {
   static const String _themeKey = 'selectedThemeIndex';
 
   static final List<ThemeColors> _availableThemes = [
-    ThemeColors(Color(0xFF2C2C54), Color(0xFFFF9933), Color(0xFFFFE0B2), Color(0xFFFFFFFF)),// indigo and saffron
-    ThemeColors(Color(0xFF2E7D32), Color(0xFFFFC107), Color(0xFFF9E79F), Color(0xFFFFFFFF)),// green and gold
-    ThemeColors(Color(0xFF006D77), Color(0xFFFFB300), Color(0xFFF9E79F), Color(0xFFFFFFFF)),// teal and yellow
-    ThemeColors(Color(0xFFC2185B), Color(0xFF4A0000), Color(0xFFFFE4E1), Color(0xFFFFFFFF)),// pink and maroon
-    ThemeColors(Color(0xFF1A237E), Color(0xFFFFA000), Color(0xFFBBDEFB), Color(0xFFFFFFFF)), // Indigo & Amber
-    ThemeColors(Color(0xFF4A148C), Color(0xFFD81B60), Color(0xFFF8BBD0), Color(0xFFFFFFFF)), // Deep Purple & Pink
-    ThemeColors(Color(0xFF263238), Color(0xFF00ACC1), Color(0xFFB2EBF2), Color(0xFFFFFFFF)), // Blue Grey & Cyan
-    ThemeColors(Color(0xFF1B5E20), Color(0xFFCDDC39), Color(0xFFF0F4C3), Color(0xFFFFFFFF)), // Dark Green & Lime
-    ThemeColors(Color(0xFF3E2723), Color(0xFFFF7043), Color(0xFFFFCCBC), Color(0xFFFFFFFF)), // Brown & Orange
-    ThemeColors(Color(0xFF37474F), Color(0xFF03A9F4), Color(0xFFB3E5FC), Color(0xFFFFFFFF)), // Blue Grey & Light Blue
+    ThemeColors(Color(0xFF5E35B1), Color(0xFFFF7E67), Color(0xFFEDE7F6), Color(0xFFFFFFFF)), // Deep Violet & Coral
+    ThemeColors(Color(0xFF00897B), Color(0xFFEA8D8D), Color(0xFFE0F2F1), Color(0xFFFFFFFF)), // Teal & Rose Gold
+    ThemeColors(Color(0xFF1A237E), Color(0xFFFFC107), Color(0xFFE8EAF6), Color(0xFFFFFFFF)), // Midnight Blue & Amber
+    ThemeColors(Color(0xFF2E7D32), Color(0xFFFFAB91), Color(0xFFE8F5E9), Color(0xFFFFFFFF)), // Forest Green & Peach
+    ThemeColors(Color(0xFF880E4F), Color(0xFFFFD54F), Color(0xFFFCE4EC), Color(0xFFFFFFFF)), // Burgundy & Gold
+    ThemeColors(Color(0xFF455A64), Color(0xFF4DD0E1), Color(0xFFECEFF1), Color(0xFFFFFFFF)), // Slate & Aqua
+    ThemeColors(Color(0xFF4A148C), Color(0xFF00BCD4), Color(0xFFF3E5F5), Color(0xFFFFFFFF)), // Dark Purple & Turquoise
+    ThemeColors(Color(0xFF5D4037), Color(0xFF80CBC4), Color(0xFFFFFDE7), Color(0xFFFFFFFF)), // Chocolate & Mint
+    ThemeColors(Color(0xFF263238), Color(0xFFFF8A65), Color(0xFFF5F5F5), Color(0xFFFFFFFF)), // Charcoal & Coral
+    ThemeColors(Color(0xFF0D47A1), Color(0xFFFFA000), Color(0xFFBBDEFB), Color(0xFFFFFFFF)), // Navy & Marigold
 
   ];
 
-  late ThemeColors _currentTheme;
+  // Initialize _currentTheme to the first available theme
+  late ThemeColors _currentTheme = _availableThemes[0];
   int _currentIndex = 0;
 
   ThemeProvider() {
