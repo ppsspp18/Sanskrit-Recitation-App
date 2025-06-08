@@ -92,27 +92,27 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _search(String query) async {
     final normQuery = normalize(query);
-
     final filteredResults = _verses.where((verse) {
       String targetText = '';
       switch (_filterType) {
         case 'Sanskrit':
-          targetText = verse['sanskrit'];
+          targetText = '${verse['chapter']}.${verse['shloka']} ${verse['sanskrit']}';
           break;
         case 'English':
-          targetText = verse['english'];
+          targetText = '${verse['chapter']}.${verse['shloka']} ${verse['english']}';
           break;
         case 'Translation':
-          targetText = verse['translation'];
+          targetText = '${verse['chapter']}.${verse['shloka']} ${verse['translation']}';
           break;
         case 'Purport':
-          targetText = verse['purport'];
+          targetText = '${verse['chapter']}.${verse['shloka']} ${verse['purport']}';
           break;
         default: // All
-          targetText = verse['sanskrit'] +
-              verse['english'] +
-              verse['translation'] +
-              verse['purport'];
+          targetText = '${verse['chapter']}.${verse['shloka']} '
+              '${verse['sanskrit']} '
+              '${verse['english']} '
+              '${verse['translation']} '
+              '${verse['purport']}';
       }
       return normalize(targetText).contains(normQuery);
     }).toList();
