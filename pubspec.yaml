@@ -33,6 +33,7 @@ dependencies:
   shared_preferences: ^2.2.2
   audioplayers: ^5.2.1
   provider: ^6.0.5
+  flutter_colorpicker: ^1.0.3
   path_provider: ^2.1.1
   media_kit: ^1.1.11 # Primary package.
   media_kit_video: ^1.1.11 # Video playback support.
