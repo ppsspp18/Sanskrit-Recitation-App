@@ -47,16 +47,45 @@ class ThemeProvider with ChangeNotifier {
     }
   }
 
+  void setCustomTheme(Color c1, Color c2, Color c3, Color c4) async {
+    _currentTheme = ThemeColors(c1, c2, c3, c4);
+    _currentIndex = -1; // Indicate custom theme
+    notifyListeners();
+
+    // Optionally save custom colors to SharedPreferences for persistence
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setInt(_themeKey, -1);
+    prefs.setInt('customColor1', c1.value);
+    prefs.setInt('customColor2', c2.value);
+    prefs.setInt('customColor3', c3.value);
+    prefs.setInt('customColor4', c4.value);
+  }
+
+
   Future<void> _loadThemeFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final savedIndex = prefs.getInt(_themeKey) ?? 0;
+
+    if (savedIndex == -1) {
+      // Load custom theme
+      final c1 = Color(prefs.getInt('customColor1') ?? Colors.blue.value);
+      final c2 = Color(prefs.getInt('customColor2') ?? Colors.orange.value);
+      final c3 = Color(prefs.getInt('customColor3') ?? Colors.yellow.value);
+      final c4 = Color(prefs.getInt('customColor4') ?? Colors.white.value);
+      _currentTheme = ThemeColors(c1, c2, c3, c4);
+    } else {
+      _currentTheme = _availableThemes[savedIndex];
+    }
     _currentIndex = savedIndex;
-    _currentTheme = _availableThemes[_currentIndex];
     notifyListeners();
   }
+
 
   Future<void> _saveThemeToPrefs(int index) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_themeKey, index);
   }
 }
+
+
+
